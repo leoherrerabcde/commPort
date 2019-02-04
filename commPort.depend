@@ -1,0 +1,18 @@
+# depslib dependency file v1.0
+1549232434 source:c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\main.cpp
+	<iostream>
+	<thread>
+	<chrono>
+	"SCCCommPort.h"
+
+1549242773 c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\scccommport.h
+	<iostream>
+	<windows.h>
+	<queue>
+	<thread>
+
+1549244773 source:c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\scccommport.cpp
+	"SCCCommPort.h"
+	<string>
+	<sstream>
+
