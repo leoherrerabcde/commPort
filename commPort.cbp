@@ -36,8 +36,6 @@
 		</Compiler>
 		<Unit filename="SCCCommPort.cpp" />
 		<Unit filename="SCCCommPort.h" />
-		<Unit filename="SerialComm.cpp" />
-		<Unit filename="SerialComm.h" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />

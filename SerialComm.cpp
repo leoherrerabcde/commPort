@@ -41,14 +41,13 @@
 
 #pragma data_seg()
 
-extern near struct special_function_bits SFB;
+/*extern near struct special_function_bits SFB;
 extern HANDLE    ghMod;   // DLL's module handle
-//extern unsigned char 	__TxCharCOMM1;
-//extern unsigned char 	__TxFrameCOMM1;
 extern unsigned int		BaudRateCOMM1;
 extern unsigned char	Numero_Puerta;
-extern CGps				gcGps;
-//extern HWND     hTTYWnd ;
+extern CGps				gcGps;*/
+
+std::string bufferIn;
 
 //---------------------------------------------------------------------------
 //  LRESULT NEAR CreateTTYInfo( HWND hWnd )
@@ -85,7 +84,7 @@ LRESULT NEAR CreateTTYInfo( HWND hWnd )
    // JVM CURSORSTATE( npTTYInfo )   = CS_HIDE ;
    LOCALECHO( npTTYInfo )     = FALSE ;
    AUTOWRAP( npTTYInfo )      = TRUE ;
-   if ((Numero_Puerta) < 1 || (Numero_Puerta) >4) Numero_Puerta = 2;
+   //if ((Numero_Puerta) < 1 || (Numero_Puerta) >4) Numero_Puerta = 2;
    PORT( npTTYInfo )          = Numero_Puerta ; /*JVM*/
    BAUDRATE( npTTYInfo )      = BaudRateCOMM1;	// JVM CBR_9600 ;
    BYTESIZE( npTTYInfo )      = 8 ;
@@ -245,8 +244,8 @@ BOOL NEAR ProcessTTYCharacter( HWND hWnd, BYTE bOut )
 //
 //---------------------------------------------------------------------------
 
-BOOL NEAR OpenConnection( HWND hWnd )
-{            
+BOOL NEAR OpenConnection( HWND hWnd , unsigned char	Numero_Puerta)
+{
    char       szPort[ 15 ];
    BOOL       fRetVal ;
    // JVM HCURSOR    hOldCursor, hWaitCursor ;
@@ -268,7 +267,7 @@ BOOL NEAR OpenConnection( HWND hWnd )
    // maximum number of ports, assume TELNET.
 
    // LHE 22 Octubre 2008
-   PORT( npTTYInfo )          = Numero_Puerta ; 
+   PORT( npTTYInfo )          = Numero_Puerta ;
    // FIN LHE 22 Octubre 2008
 
    if (PORT( npTTYInfo ) > MAXPORTS)
@@ -276,7 +275,7 @@ BOOL NEAR OpenConnection( HWND hWnd )
    else
    {
       // load the COM prefix string and append port number
-   
+
       //JVM LoadString( GETHINST( hWnd ), IDS_COMPREFIX, szTemp, sizeof( szTemp ) ) ;
       wsprintf( szPort, "%s%d", "COM", PORT( npTTYInfo ) ) ;
    }
@@ -288,7 +287,7 @@ BOOL NEAR OpenConnection( HWND hWnd )
                   0,                    // exclusive access
                   NULL,                 // no security attrs
                   OPEN_EXISTING,
-                  FILE_ATTRIBUTE_NORMAL | 
+                  FILE_ATTRIBUTE_NORMAL |
                   FILE_FLAG_OVERLAPPED, // overlapped I/O
                   NULL )) == (HANDLE) -1 )
       return ( FALSE ) ;
@@ -308,7 +307,7 @@ BOOL NEAR OpenConnection( HWND hWnd )
                                       PURGE_TXCLEAR | PURGE_RXCLEAR ) ;
 
       // set up for overlapped I/O
-	  
+
       CommTimeOuts.ReadIntervalTimeout = 0xFFFFFFFF ;
       CommTimeOuts.ReadTotalTimeoutMultiplier = 0 ;
       CommTimeOuts.ReadTotalTimeoutConstant = 0 ; /*OJO ex 1000*/
@@ -328,7 +327,7 @@ BOOL NEAR OpenConnection( HWND hWnd )
 
       if (NULL == (hCommWatchThread =
                       CreateThread( (LPSECURITY_ATTRIBUTES) NULL,
-                                    0, 
+                                    0,
                                     (LPTHREAD_START_ROUTINE) CommWatchProc,
                                     (LPVOID) npTTYInfo,
                                     0, &dwThreadID )))
@@ -341,7 +340,7 @@ BOOL NEAR OpenConnection( HWND hWnd )
       {
          THREADID( npTTYInfo ) = dwThreadID ;
          HTHREAD( npTTYInfo ) = hCommWatchThread ;
-		 SetThreadPriority(hCommWatchThread, (int) THREAD_PRIORITY_ABOVE_NORMAL);	
+		 SetThreadPriority(hCommWatchThread, (int) THREAD_PRIORITY_ABOVE_NORMAL);
 
          // assert DTR
 
@@ -528,12 +527,12 @@ int NEAR ReadCommBlock( HWND hWnd, LPSTR lpszBlock, int nMaxLength )
 	if (NULL == (npTTYInfo = GETNPTTYINFO))
 		return ( FALSE ) ;
 
-	// only try to read number of bytes in queue 
+	// only try to read number of bytes in queue
 	ClearCommError( COMDEV( npTTYInfo ), &dwErrorFlags, &ComStat ) ;
 	dwLength = min( (DWORD) nMaxLength, ComStat.cbInQue ) ;
 
 	if (dwLength > 0)
-	{	
+	{
 		ResetEvent(READ_OS( npTTYInfo ).hEvent);		/*JVM OJO*/
 		fReadStat = ReadFile( COMDEV( npTTYInfo ), lpszBlock,
 		                    dwLength, &dwLength, &READ_OS( npTTYInfo ) ) ;
@@ -542,11 +541,11 @@ int NEAR ReadCommBlock( HWND hWnd, LPSTR lpszBlock, int nMaxLength )
 			if (GetLastError() == ERROR_IO_PENDING)
 			{
 				OutputDebugString("\n\rIO Pending");
-				// We have to wait for read to complete. 
+				// We have to wait for read to complete.
 				// This function will timeout according to the
 				// CommTimeOuts.ReadTotalTimeoutConstant variable
 				// Every time it times out, check for port errors
-				while(!GetOverlappedResult( COMDEV( npTTYInfo ), 
+				while(!GetOverlappedResult( COMDEV( npTTYInfo ),
 					&READ_OS( npTTYInfo ), &dwLength, TRUE ))
 				{
 					dwError = GetLastError();
@@ -568,14 +567,14 @@ int NEAR ReadCommBlock( HWND hWnd, LPSTR lpszBlock, int nMaxLength )
 						}
 						break;
 					}
-						
+
 				}
-					
+
 			}
 			else
 			{
 			    // some other error occurred
-	
+
 			    dwLength = 0 ;
 				ClearCommError( COMDEV( npTTYInfo ), &dwErrorFlags, &ComStat ) ;
 				if ((dwErrorFlags > 0) && DISPLAYERRORS( npTTYInfo ))
@@ -587,7 +586,7 @@ int NEAR ReadCommBlock( HWND hWnd, LPSTR lpszBlock, int nMaxLength )
 			}
 		}
 	}
-   
+
    return ( dwLength ) ;
 
 } // end of ReadCommBlock()
@@ -632,34 +631,34 @@ BOOL NEAR WriteCommBlock( HWND hWnd, LPSTR lpByte , DWORD dwBytesToWrite)
 	                       &dwBytesWritten, &WRITE_OS( npTTYInfo ) ) ;
 
 	// Note that normally the code will not execute the following
-	// because the driver caches write operations. Small I/O requests 
-	// (up to several thousand bytes) will normally be accepted 
+	// because the driver caches write operations. Small I/O requests
+	// (up to several thousand bytes) will normally be accepted
 	// immediately and WriteFile will return true even though an
 	// overlapped operation was specified
 
-	if (!fWriteStat) 
+	if (!fWriteStat)
 	{
 		if(GetLastError() == ERROR_IO_PENDING)
 		{
 			// We should wait for the completion of the write operation
 			// so we know if it worked or not
 
-			// This is only one way to do this. It might be beneficial to 
-			// place the writing operation in a separate thread 
-			// so that blocking on completion will not negatively 
+			// This is only one way to do this. It might be beneficial to
+			// place the writing operation in a separate thread
+			// so that blocking on completion will not negatively
 			// affect the responsiveness of the UI
 
-			// If the write takes long enough to complete, this 
+			// If the write takes long enough to complete, this
 			// function will timeout according to the
 			// CommTimeOuts.WriteTotalTimeoutConstant variable.
-			// At that time we can check for errors and then wait 
+			// At that time we can check for errors and then wait
 			// some more.
 
 			if (!GetOverlappedResult( COMDEV( npTTYInfo ),	/**JVM solo una vez aqui*/
 				&WRITE_OS( npTTYInfo ), &dwBytesWritten, TRUE )) /*el resto de la espera se hara en thread comm*/
 			{
 				dwError = GetLastError();
-				if(!(dwError == ERROR_IO_INCOMPLETE))	// normal result if not finished	
+				if(!(dwError == ERROR_IO_INCOMPLETE))	// normal result if not finished
 				{
 					// an error occurred, try to recover
 					wsprintf( szError, "<CE-%u>", dwError ) ;
@@ -670,12 +669,12 @@ BOOL NEAR WriteCommBlock( HWND hWnd, LPSTR lpByte , DWORD dwBytesToWrite)
 						wsprintf( szError, "<CE-%u>", dwErrorFlags ) ;
 						OutputDebugString(szError);
 					}
-					
+
 				}
 			}
 		}
 		else
-		{						 	
+		{
 			// some other error occurred
 
 			ClearCommError( COMDEV( npTTYInfo ), &dwErrorFlags, &ComStat ) ;
@@ -752,14 +751,14 @@ DWORD FAR PASCAL CommWatchProc( LPSTR lpData )
 
 			do
 		   {
-				//if (nLength = ReadCommBlock( hTTYWnd, (LPSTR) abIn, MAXBLOCK )) 
-				if (nLength = ReadCommBlock( NULL, (LPSTR) abIn, MAXBLOCK )) 
-				{	
+				//if (nLength = ReadCommBlock( hTTYWnd, (LPSTR) abIn, MAXBLOCK ))
+				if (nLength = ReadCommBlock( NULL, (LPSTR) abIn, MAXBLOCK ))
+				{
 					/*---------------------------*/
 					/*Código GPS */
 					/*---------------------------*/
 					abIn[nLength]='\0';
-					gcGps.AddData ( ( LPSTR ) abIn );
+					bufferIn += ( ( LPSTR ) abIn );
 					//gstrDataComm += (LPSTR) abIn;
 					//ProccessDataGps ( CString );
 		      	}

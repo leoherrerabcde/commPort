@@ -12,7 +12,7 @@ int main()
 
     SCCCommPort commPort;
 
-    commPort.openPort(3);
+    commPort.openPort(7);
 
     std::string msg("1234567890");
     commPort.sendData(msg);

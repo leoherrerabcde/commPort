@@ -1,12 +1,12 @@
 #ifndef	SERIALCOMM_H
 #define	SERIALCOMM_H
 /******************************************************************************\
-*       This is a part of the Microsoft Source Code Samples. 
+*       This is a part of the Microsoft Source Code Samples.
 *       Copyright (C) 1993 Microsoft Corporation.
-*       All rights reserved. 
-*       This source code is only intended as a supplement to 
+*       All rights reserved.
+*       This source code is only intended as a supplement to
 *       Microsoft Development Tools and/or WinHelp documentation.
-*       See these sources for detailed information regarding the 
+*       See these sources for detailed information regarding the
 *       Microsoft samples programs.
 \******************************************************************************/
 
@@ -191,7 +191,7 @@ BOOL NEAR WriteTTYBlock( HWND, LPSTR, int ) ;
 int NEAR ReadCommBlock( HWND, LPSTR, int ) ;
 BOOL NEAR WriteCommBlock( HWND , LPSTR, DWORD);
 BOOL NEAR MoveTTYCursor( HWND ) ;
-BOOL NEAR OpenConnection( HWND ) ;
+BOOL NEAR OpenConnection( HWND , unsigned char	Numero_Puerta) ;
 BOOL NEAR SetupConnection( HWND ) ;
 BOOL NEAR CloseConnection( HWND ) ;
 VOID NEAR GoModalDialogBoxParam( HINSTANCE, LPCSTR, HWND, DLGPROC, LPARAM ) ;

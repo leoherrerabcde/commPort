@@ -6,7 +6,7 @@
 #include <queue>
 #include <thread>
 
-#include "SerialComm.h"
+//#include "SerialComm.h"
 
 class SCCCommPort
 {
@@ -33,7 +33,7 @@ class SCCCommPort
         std::thread* m_threadRun;
         void main_loop();
 
-        //std::string readMsg();
+        std::string readMsg();
         bool writeMsg(std::string msg);
 
         bool sendByte(char byte);

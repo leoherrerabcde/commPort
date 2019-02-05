@@ -46,7 +46,7 @@ bool SCCCommPort::openPort(const int iPort)
         NULL
      );
 
-    SetCommMask (m_hPort, EV_RXCHAR | EV_ERR); //receive character event
+    SetCommMask (m_hPort, EV_RXCHAR | EV_TXEMPTY | EV_ERR); //receive character event
 
     if (!GetCommState(m_hPort,&dcb))
         return false;
@@ -87,99 +87,40 @@ bool SCCCommPort::openPort(const int iPort)
 
 void SCCCommPort::main_loop()
 {
-    while (m_bOpened == true)
+    if (m_bOpened == true)
     {
        	DWORD dwEventMask = 0;
 
         OVERLAPPED ov;
         memset(&ov,0,sizeof(ov));
-        ov.hEvent = CreateEvent( 0,true,0,0);
+        ov.hEvent = CreateEvent( NULL,TRUE,FALSE,NULL);
 
-        HANDLE arHandles[2];
+        /*HANDLE arHandles[2];
         arHandles[0] = m_hThreadTerm;
-       	DWORD dwWait;
+       	DWORD dwWait;*/
 
-        bool ret = WaitCommEvent (m_hPort, &dwEventMask, &ov);
+        SetCommMask (m_hPort, EV_RXCHAR | EV_TXEMPTY | EV_ERR); //receive character event
 
-        if (ret == false)
-            return;
-
-        arHandles[1] = ov.hEvent;
-
-		dwWait = WaitForMultipleObjects (2,arHandles,FALSE,INFINITE);
-
-		switch ( dwWait )
-		{
-		case WAIT_OBJECT_0:
-			{
-				//return;
-                std::this_thread::sleep_for(std::chrono::milliseconds(2));
-			}
-			break;
-		case WAIT_OBJECT_0 + 1:
-			{
-				DWORD dwMask;
-				if (GetCommMask(m_hPort,&dwMask) )
-				{
-					if ( dwMask == EV_TXEMPTY )
-					{
-						cout << "Data sent";
-						ResetEvent ( ov.hEvent );
-						continue;
-					}
-				}
-
-				int iAccum = 0;
-
-				try
-				{
-					std::string szDebug;
-					bool abRet = false;
-
-					DWORD dwBytesRead = 0;
-					OVERLAPPED ovRead;
-					memset(&ovRead,0,sizeof(ovRead));
-					ovRead.hEvent = CreateEvent( 0,true,0,0);
-
-					do
-					{
-						ResetEvent( ovRead.hEvent  );
-						char szTmp[1];
-						//int iSize  = sizeof ( szTmp );
-						memset(szTmp,0,sizeof szTmp);
-						abRet = ::ReadFile(m_hPort,szTmp,sizeof(szTmp),&dwBytesRead,&ovRead);
-						if (!abRet )
-						{
-							//abContinue = FALSE;
-							break;
-						}
-						if ( dwBytesRead > 0 )
-						{
-						    m_chBufferIn.push(szTmp[0]);
-						    m_bReceived = true;
-							iAccum += dwBytesRead;
-						}
-					}
-					while (abRet == true);// dwBytesRead > 0 );
-					CloseHandle(ovRead.hEvent );
-				}
-				catch(...)
-				{
-					//ASSERT(0);
-				}
-
-				ResetEvent ( ov.hEvent );
-			}
-			break;
-		}//switch
-
-        /*char ch = getByte();
-        if (ch != '\0')
+        while (m_bOpened == true)
         {
-            m_chBufferIn.push(ch);
-            m_bReceived = true;
-            continue;
-        }*/
+            bool ret = WaitCommEvent (m_hPort, &dwEventMask, &ov);
+
+            if ((dwEventMask & EV_RXCHAR) == EV_RXCHAR)
+            {
+                m_Buffer += readMsg();
+            }
+            else
+            {
+
+            }
+
+            if (ret == false)
+                return;
+
+            ResetEvent ( ov.hEvent );
+        } //while
+
+
         std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 }
@@ -256,23 +197,57 @@ bool SCCCommPort::writeMsg(std::string msg)
     return retVal;
 }
 
-/*std::string readMsg()
+std::string SCCCommPort::readMsg()
 {
     if (m_bOpened == false)
         return '\0';
 
-    BYTE Byte;
-    DWORD dwBytesTransferred;
-    DWORD dwCommModemStatus;
+	BOOL       fReadStat ;
+	COMSTAT    ComStat ;
+	DWORD      dwErrorFlags;
+	DWORD      dwLength;
+	//DWORD      dwError;
+	//char       szError[ 10 ] ;
 
-        ReadFile (m_hPort, &Byte, 1, &dwBytesTransferred, 0); //read 1
-    //else //if (dwCommModemStatus & EV_ERR)
-        //retVal = 0x101;
-    //    return '\0';
-    //retVal = Byte;
-    if (dwBytesTransferred > 1)
-    return Byte;
-}*/
+	// only try to read number of bytes in queue
+	ClearCommError( m_hPort, &dwErrorFlags, &ComStat ) ;
+	dwLength = min( (DWORD) 255, ComStat.cbInQue ) ;
+
+	std::string strMsg;
+
+	if (dwLength > 0)
+	{
+        OVERLAPPED ovRead;
+        memset(&ovRead,0,sizeof(ovRead));
+        ovRead.hEvent = CreateEvent( 0,true,0,0);
+        ResetEvent( ovRead.hEvent  );
+
+	    char lpszBlock[dwLength + 1];
+		fReadStat = ReadFile( m_hPort, lpszBlock,
+		                    dwLength, &dwLength, &ovRead ) ;
+		if (!fReadStat)
+		{
+			if (GetLastError() == ERROR_IO_PENDING)
+			{
+			}
+			else
+			{
+			    // some other error occurred
+			}
+		}
+		else
+        {
+            if (dwLength > 0)
+            {
+                lpszBlock[dwLength] = '\0';
+                strMsg += lpszBlock;
+            }
+		}
+		CloseHandle(ovRead.hEvent );
+	}
+
+    return strMsg;
+}
 
 char SCCCommPort::getByte()
 {
