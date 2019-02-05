@@ -9,6 +9,10 @@ SCCCommPort::SCCCommPort()
 {
     //ctor
     m_bOpened = false;
+    m_bReceived = false;
+    m_bSending = false;
+    m_bSent = false;
+
     m_threadRun = NULL;
 
     m_iCommPort = 1;
@@ -38,11 +42,11 @@ bool SCCCommPort::openPort(const int iPort)
 
     m_hPort = CreateFile(
         strPort.c_str(),
-        GENERIC_WRITE,
+        GENERIC_WRITE | GENERIC_READ,
         0,
         NULL,
         OPEN_EXISTING,
-        0,
+        0 /*FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED*/,
         NULL
      );
 
@@ -58,6 +62,8 @@ bool SCCCommPort::openPort(const int iPort)
 
     if (!SetCommState(m_hPort, &dcb))
         return false;
+
+    //PurgeComm( m_hPort, PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR ) ;
 
     COMMTIMEOUTS timeout = { 0 };
     timeout.ReadIntervalTimeout = MAXDWORD;
@@ -117,11 +123,10 @@ void SCCCommPort::main_loop()
             if (ret == false)
                 return;
 
-            ResetEvent ( ov.hEvent );
+            //ResetEvent ( ov.hEvent );
         } //while
-
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        CloseHandle( ov.hEvent ) ;
+        //std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 }
 
@@ -202,16 +207,16 @@ std::string SCCCommPort::readMsg()
     if (m_bOpened == false)
         return '\0';
 
-	BOOL       fReadStat ;
+	BOOL       fReadStat = FALSE;
 	COMSTAT    ComStat ;
 	DWORD      dwErrorFlags;
 	DWORD      dwLength;
-	//DWORD      dwError;
-	//char       szError[ 10 ] ;
+	DWORD      dwError;
+	char       szError[ 10 ] ;
 
 	// only try to read number of bytes in queue
 	ClearCommError( m_hPort, &dwErrorFlags, &ComStat ) ;
-	dwLength = min( (DWORD) 255, ComStat.cbInQue ) ;
+	dwLength = ComStat.cbInQue;
 
 	std::string strMsg;
 
@@ -219,30 +224,60 @@ std::string SCCCommPort::readMsg()
 	{
         OVERLAPPED ovRead;
         memset(&ovRead,0,sizeof(ovRead));
-        ovRead.hEvent = CreateEvent( 0,true,0,0);
+        ovRead.hEvent = CreateEvent( NULL,TRUE,FALSE,NULL);
         ResetEvent( ovRead.hEvent  );
 
 	    char lpszBlock[dwLength + 1];
+	    memset(lpszBlock,0, sizeof(lpszBlock));
 		fReadStat = ReadFile( m_hPort, lpszBlock,
 		                    dwLength, &dwLength, &ovRead ) ;
 		if (!fReadStat)
 		{
 			if (GetLastError() == ERROR_IO_PENDING)
 			{
+				while(!GetOverlappedResult( m_hPort,
+					&ovRead, &dwLength, TRUE ))
+				{
+					dwError = GetLastError();
+					if(dwError == ERROR_IO_INCOMPLETE)
+						// normal result if not finished
+						continue;
+					else
+					{
+						// an error occurred, try to recover
+						wsprintf( szError, "<CE-%u>", dwError ) ;
+						OutputDebugString(szError);
+						//WriteTTYBlock( hWnd, szError, lstrlen( szError ) ) ;
+						ClearCommError( m_hPort, &dwErrorFlags, &ComStat ) ;
+						if ((dwErrorFlags > 0))
+						{
+							wsprintf( szError, "<CE-%u>", dwErrorFlags ) ;
+							OutputDebugString(szError);
+							//WriteTTYBlock( hWnd, szError, lstrlen( szError ) ) ;
+						}
+						break;
+					}
+				}
 			}
 			else
 			{
 			    // some other error occurred
+			    dwLength = 0 ;
+				ClearCommError( m_hPort, &dwErrorFlags, &ComStat ) ;
+				if ((dwErrorFlags > 0) )
+				{
+					wsprintf( szError, "<CE-%u>", dwErrorFlags ) ;
+					OutputDebugString(szError);
+					//WriteTTYBlock( hWnd, szError, lstrlen( szError ) ) ;
+				}
 			}
 		}
-		else
+        if (dwLength > 0)
         {
-            if (dwLength > 0)
-            {
-                lpszBlock[dwLength] = '\0';
-                strMsg += lpszBlock;
-            }
-		}
+            lpszBlock[dwLength] = '\0';
+            strMsg += lpszBlock;
+            m_bReceived = true;
+        }
 		CloseHandle(ovRead.hEvent );
 	}
 
@@ -277,16 +312,7 @@ std::string SCCCommPort::getData()
     if (m_bOpened == false)
         return '\0';
 
-    if (m_chBufferIn.empty() == true)
-        return "";
+    m_bReceived = false;
 
-    std::string strData;
-    do
-    {
-        strData += m_chBufferIn.front();
-        m_chBufferIn.pop();
-    }
-    while (m_chBufferIn.empty() == false);
-
-    return strData;
+    return m_Buffer;
 }

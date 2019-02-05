@@ -28,6 +28,9 @@ class SCCCommPort
         int m_iStopBits;
         int m_iParity;
 
+        bool isRxEvent() {return m_bReceived;}
+        bool isOpened() {return m_bOpened;}
+
     protected:
 
         std::thread* m_threadRun;

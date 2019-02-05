@@ -23,11 +23,14 @@ int main()
     msg = "";
     do
     {
-        msg = commPort.getData();
-
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (commPort.isRxEvent() == true)
+        {
+            msg = commPort.getData();
+            cout << "Buffer In: " << msg << std::endl;
+        }
+         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    while (msg == "");
+    while (commPort.isOpened());
 
     cout << "getData()= " << msg << std::endl;
 
