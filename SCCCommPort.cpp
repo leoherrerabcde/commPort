@@ -144,20 +144,14 @@ void SCCCommPort::closePort()
     }
 }
 
+bool SCCCommPort::sendData(char* msg, size_t len)
+{
+    return writeMsg(msg, len);
+}
+
 bool SCCCommPort::sendData(std::string msg)
 {
     return writeMsg(msg);
-
-    /*if (m_bOpened == false)
-        return false;
-
-    for (auto ch : msg)
-    {
-        m_chBufferOut.push(ch);
-    }
-    m_bSending = true;
-
-    return true;*/
 }
 
 bool SCCCommPort::sendByte(char ch)
@@ -198,6 +192,35 @@ bool SCCCommPort::writeMsg(std::string msg)
             return false;
     }
     while (retVal == true && msg.length() > 0 && count < 5);
+
+    return retVal;
+}
+
+bool SCCCommPort::writeMsg(char* msg, size_t len)
+{
+    if (m_bOpened == false)
+        return false;
+
+    DWORD bytesWritten;
+    //char ch = m_chBufferOut.front();
+    bool retVal;
+    int count = 0;
+    do
+    {
+        ++count;
+        retVal = WriteFile(m_hPort, msg, 1, &bytesWritten, NULL);
+
+        if (retVal == true && bytesWritten > 0)
+        {
+            //msg = msg.substr(bytesWritten);
+            msg += bytesWritten;
+            len -= bytesWritten;
+            count = 0;
+        }
+        else
+            return false;
+    }
+    while (retVal == true && len > 0 && count < 5);
 
     return retVal;
 }
@@ -276,6 +299,8 @@ std::string SCCCommPort::readMsg()
         {
             lpszBlock[dwLength] = '\0';
             strMsg += lpszBlock;
+            for (DWORD i = 0; i < dwLength ; ++i)
+                m_chBufferIn.push(lpszBlock[i]);
             m_bReceived = true;
         }
 		CloseHandle(ovRead.hEvent );
@@ -316,3 +341,22 @@ std::string SCCCommPort::getData()
 
     return m_Buffer;
 }
+
+bool SCCCommPort::getData(char* buffer, int& len)
+{
+    *buffer = '\0';
+    len = 0;
+    if (m_bOpened == false || m_bReceived == false)
+        return false;
+
+    while (m_chBufferIn.size())
+    {
+        *buffer = m_chBufferIn.front();
+        m_chBufferIn.pop();
+        ++len;
+    }
+    m_bReceived = false;
+
+    return true;
+}
+

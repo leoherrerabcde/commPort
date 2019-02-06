@@ -16,7 +16,9 @@ class SCCCommPort
 
         bool openPort(const int iPort);
         bool sendData(std::string msg);
+        bool sendData(char* bufferOut, size_t len);
         std::string getData();
+        bool getData(char* buffer, int& len);
         void closePort();
 
         bool m_bOpened;
@@ -38,6 +40,7 @@ class SCCCommPort
 
         std::string readMsg();
         bool writeMsg(std::string msg);
+        bool writeMsg(char* msg, size_t len);
 
         bool sendByte(char byte);
         char getByte();
