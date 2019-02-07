@@ -2,8 +2,26 @@
 
 #include <string>
 #include <sstream>
+#include <unordered_map>
 
 using namespace std;
+
+unordered_map<int,DWORD> stBaudRateMap =
+{
+        {110,CBR_110},
+        {300,CBR_300},
+        {600,CBR_600},
+        {1200,CBR_1200},
+        {2400,CBR_2400},
+        {4800,CBR_4800},
+        {9600,CBR_9600},
+        {19200,CBR_19200},
+        {38400,CBR_38400},
+        {57600,CBR_57600},
+        {115200,CBR_115200},
+        {128000,CBR_128000},
+        {256000,CBR_256000}
+};
 
 SCCCommPort::SCCCommPort()
 {
@@ -27,7 +45,7 @@ SCCCommPort::~SCCCommPort()
     //dtor
 }
 
-bool SCCCommPort::openPort(const int iPort)
+bool SCCCommPort::openPort(const int iPort, const int baudRate)
 {
     if (m_bOpened == true)
         return true;
@@ -55,7 +73,7 @@ bool SCCCommPort::openPort(const int iPort)
     if (!GetCommState(m_hPort,&dcb))
         return false;
 
-    dcb.BaudRate = CBR_9600; //9600 Baud
+    dcb.BaudRate = stBaudRateMap[baudRate]; //9600 Baud
     dcb.ByteSize = 8; //8 data bits
     dcb.Parity = NOPARITY; //no parity
     dcb.StopBits = ONESTOPBIT; //1 stop
@@ -106,13 +124,17 @@ void SCCCommPort::main_loop()
        	DWORD dwWait;*/
 
         SetCommMask (m_hPort, EV_RXCHAR | EV_TXEMPTY | EV_ERR); //receive character event
-
+        //return;
+dwEventMask=EV_RXCHAR;
+bool ret = true;
         while (m_bOpened == true)
         {
-            bool ret = WaitCommEvent (m_hPort, &dwEventMask, &ov);
+            //bool ret = WaitCommEvent (m_hPort, &dwEventMask, &ov);
 
             if ((dwEventMask & EV_RXCHAR) == EV_RXCHAR)
             {
+                m_bRxEvent = false;
+                //std::string msg = readMsg();
                 m_Buffer += readMsg();
             }
             else
@@ -120,6 +142,8 @@ void SCCCommPort::main_loop()
 
             }
 
+            if (m_bRxEvent == false)
+                std::this_thread::sleep_for(std::chrono::milliseconds(2));
             if (ret == false)
                 return;
 
@@ -178,10 +202,11 @@ bool SCCCommPort::writeMsg(std::string msg)
     //char ch = m_chBufferOut.front();
     bool retVal;
     int count = 0;
+    //CancelIo(m_hPort);
     do
     {
         ++count;
-        retVal = WriteFile(m_hPort, msg.c_str(), msg.length(), &bytesWritten, NULL);
+        retVal = ::WriteFile(m_hPort, msg.c_str(), msg.length(), &bytesWritten, NULL);
 
         if (retVal == true && bytesWritten > 0)
         {
@@ -351,10 +376,11 @@ bool SCCCommPort::getData(char* buffer, int& len)
 
     while (m_chBufferIn.size())
     {
-        *buffer = m_chBufferIn.front();
+        *buffer++ = m_chBufferIn.front();
         m_chBufferIn.pop();
         ++len;
     }
+    *buffer = '\0';
     m_bReceived = false;
 
     return true;

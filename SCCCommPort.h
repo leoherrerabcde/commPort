@@ -14,7 +14,7 @@ class SCCCommPort
         SCCCommPort();
         virtual ~SCCCommPort();
 
-        bool openPort(const int iPort);
+        bool openPort(const int iPort, const int baudRate);
         bool sendData(std::string msg);
         bool sendData(char* bufferOut, size_t len);
         std::string getData();
@@ -60,6 +60,7 @@ class SCCCommPort
         bool m_bSending;
         bool m_bSent;
         bool m_bReceived;
+        bool m_bRxEvent;
 };
 
 #endif // SCCCOMMPORT_H

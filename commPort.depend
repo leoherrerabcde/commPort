@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1549490697 source:c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\main.cpp
+1549513602 source:c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\main.cpp
 	<iostream>
 	<thread>
 	<chrono>
@@ -7,16 +7,17 @@
 	"SCCCommPort.h"
 	"SCCWirelessRcvrProtocol.h"
 
-1549487118 c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\scccommport.h
+1549513086 c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\scccommport.h
 	<iostream>
 	<windows.h>
 	<queue>
 	<thread>
 
-1549490508 source:c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\scccommport.cpp
+1549513527 source:c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\scccommport.cpp
 	"SCCCommPort.h"
 	<string>
 	<sstream>
+	<unordered_map>
 
 1549335294 c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\serialcomm.h
 	<windows.h>
@@ -26,7 +27,7 @@
 	<memory.h>
 	"version.h"
 
-1549490189 source:c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\sccwirelessrcvrprotocol.cpp
+1549512477 source:c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\sccwirelessrcvrprotocol.cpp
 	"SCCWirelessRcvrProtocol.h"
 	<sstream>
 

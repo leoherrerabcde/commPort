@@ -13,18 +13,22 @@ int main(int argc, char* argv[])
     cout << "Hello world!" << endl;
 
     int nPort = 7;
-    if (argc > 1)
+    int baudRate = 9600;
+    if (argc > 2)
+    {
         nPort = std::stoi(argv[1]);
+        baudRate = std::stoi(argv[2]);
+    }
     SCCCommPort commPort;
     SCCWirelessRcvrProtocol rcvrProtocol;
 
 
-    commPort.openPort(nPort);
+    commPort.openPort(nPort, baudRate);
 
     std::string msg("1234567890");
     /*cout << "Sending Message: " << msg << " for testing." << std::endl;
-    commPort.sendData(msg);*/
-
+    commPort.sendData(msg);
+    */
     char bufferOut[255];
     char bufferIn[250];
     int len;
@@ -48,7 +52,7 @@ int main(int argc, char* argv[])
             if (ret == true)
             {
                 msg = rcvrProtocol.convChar2Hex(bufferIn, len);
-                cout << "Buffer In(char): " << bufferIn << std::endl;
+                cout << "Buffer In(Hex): [" << msg << "]. Buffer In(char): [" << bufferIn << "]" << std::endl;
             }
         }
          std::this_thread::sleep_for(std::chrono::seconds(1));
