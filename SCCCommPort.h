@@ -1,8 +1,13 @@
 #ifndef SCCCOMMPORT_H
 #define SCCCOMMPORT_H
 
-#include <iostream>
+#include "Detect_SO.h"
+
+#ifdef WINDOW_OS
 #include <windows.h>
+#endif // __MINGW32__
+
+#include <iostream>
 #include <queue>
 #include <thread>
 
@@ -48,6 +53,7 @@ class SCCCommPort
     private:
 
         HANDLE m_hPort;
+        int m_iUSBPort;
 
         HANDLE	m_hThreadTerm ;
         HANDLE	m_hThread;

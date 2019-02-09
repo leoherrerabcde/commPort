@@ -45,6 +45,36 @@ SCCCommPort::~SCCCommPort()
     //dtor
 }
 
+bool SCCCommPort::sendData(char* msg, size_t len)
+{
+    return writeMsg(msg, len);
+}
+
+bool SCCCommPort::sendData(std::string msg)
+{
+    return writeMsg(msg);
+}
+
+bool SCCCommPort::getData(char* buffer, int& len)
+{
+    *buffer = '\0';
+    len = 0;
+    if (m_bOpened == false || m_bReceived == false)
+        return false;
+
+    while (m_chBufferIn.size())
+    {
+        *buffer++ = m_chBufferIn.front();
+        m_chBufferIn.pop();
+        ++len;
+    }
+    *buffer = '\0';
+    m_bReceived = false;
+
+    return true;
+}
+
+#ifdef WINDOW_OS
 bool SCCCommPort::openPort(const int iPort, const int baudRate)
 {
     if (m_bOpened == true)
@@ -166,16 +196,6 @@ void SCCCommPort::closePort()
         }
         CloseHandle(m_hPort); //close the handle
     }
-}
-
-bool SCCCommPort::sendData(char* msg, size_t len)
-{
-    return writeMsg(msg, len);
-}
-
-bool SCCCommPort::sendData(std::string msg)
-{
-    return writeMsg(msg);
 }
 
 bool SCCCommPort::sendByte(char ch)
@@ -366,23 +386,5 @@ std::string SCCCommPort::getData()
 
     return m_Buffer;
 }
-
-bool SCCCommPort::getData(char* buffer, int& len)
-{
-    *buffer = '\0';
-    len = 0;
-    if (m_bOpened == false || m_bReceived == false)
-        return false;
-
-    while (m_chBufferIn.size())
-    {
-        *buffer++ = m_chBufferIn.front();
-        m_chBufferIn.pop();
-        ++len;
-    }
-    *buffer = '\0';
-    m_bReceived = false;
-
-    return true;
-}
+#endif // WINDOW_OS
 

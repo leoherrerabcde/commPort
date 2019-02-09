@@ -36,8 +36,10 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
+		<Unit filename="Detect_SO.h" />
 		<Unit filename="SCCCommPort.cpp" />
 		<Unit filename="SCCCommPort.h" />
+		<Unit filename="SCCLinuxComPort.cpp" />
 		<Unit filename="SCCWirelessRcvrProtocol.cpp" />
 		<Unit filename="SCCWirelessRcvrProtocol.h" />
 		<Unit filename="main.cpp" />
