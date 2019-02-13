@@ -52,13 +52,15 @@ class SCCCommPort
 
     private:
 
+#ifdef WINDOW_OS
         HANDLE m_hPort;
-        int m_iUSBPort;
 
         HANDLE	m_hThreadTerm ;
         HANDLE	m_hThread;
         HANDLE	m_hThreadStarted;
         HANDLE	m_hDataRx;
+#endif
+        int m_iUSBPort;
 
         std::queue<char> m_chBufferIn;
         std::queue<char> m_chBufferOut;

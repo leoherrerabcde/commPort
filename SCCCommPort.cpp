@@ -6,6 +6,7 @@
 
 using namespace std;
 
+#ifdef WINDOW_OS
 unordered_map<int,DWORD> stBaudRateMap =
 {
         {110,CBR_110},
@@ -22,6 +23,7 @@ unordered_map<int,DWORD> stBaudRateMap =
         {128000,CBR_128000},
         {256000,CBR_256000}
 };
+#endif // WINDOW_OS
 
 SCCCommPort::SCCCommPort()
 {
