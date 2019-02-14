@@ -130,6 +130,9 @@ class SCCWirelessRcvrProtocol
 
         std::vector<char> m_chStatusVector;
         std::unordered_map <char, TagDataStruct> m_TagDataMap;
+        std::vector<bool> m_bAlarmVector;
+        std::vector<bool> m_bFailVector;
+        std::vector<bool> m_bNozzleActivedVector;
 };
 
 #endif // SCCWIRELESSRCVRPROTOCOL_H

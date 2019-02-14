@@ -32,8 +32,8 @@ int main(int argc, char* argv[])
     char bufferOut[255];
     char bufferIn[250];
     int len;
-    int addr = 1;
-    msg = rcvrProtocol.getStrCmdStatusCheck(addr, bufferOut, len);
+    int iAddr = 1;
+    msg = rcvrProtocol.getStrCmdStatusCheck(iAddr, bufferOut, len);
 
     msg = rcvrProtocol.convChar2Hex(bufferOut, len);
 
@@ -44,10 +44,25 @@ int main(int argc, char* argv[])
     msg = "";
 
     int state = 0;
+    int iTimeOut;
+    bool bNextAddr;
+    char chLen = 0;
     do
     {
+        bNextAddr = true;
+        iTimeOut = 100;
+        if (chLen > 0)
+        {
+            msg = rcvrProtocol.convChar2Hex(bufferOut, chLen);
+            cout << "Sending Message: " << msg << std::endl;
+            commPort.sendData(bufferOut, chLen);
+            chLen = 0;
+            iTimeOut = 20;
+            bNextAddr = false;
+        }
         if (commPort.isRxEvent() == true)
         {
+            bNextAddr =false;
             bool ret = commPort.getData(bufferIn, len);
             if (ret == true)
             {
@@ -62,10 +77,16 @@ int main(int argc, char* argv[])
                     cout << "Valid WGT Response" << std::endl;
                     if (strCmd == CMD_CHECKSTATUS)
                         cout << "WGT Status: " << rcvrProtocol.getStrStatus(resp[0]) << endl;
+                    rcvrProtocol.nextAction(iAddr, bufferOut, chLen, iTimeOut);
                 }
             }
         }
-         std::this_thread::sleep_for(std::chrono::seconds(1));
+        if (iTimeOut > 0)
+            std::this_thread::sleep_for(std::chrono::milliseconds(iTimeOut));
+        if (bNextAddr == true)
+        {
+            ++iAddr;
+        }
     }
     while (commPort.isOpened());
 

@@ -308,18 +308,24 @@ bool SCCWirelessRcvrProtocol::nextAction(int addr, char* buffer, char& len, int&
     {
         return nextActionFromGetTagData(cmdSt, addr, buffer, len, timeout);
     }
-    else if (cmdSt.command == stCmdList[CMD_INVALID])
-    {
-    }
     return false;
 }
 
 bool SCCWirelessRcvrProtocol::nextActionFromStatus(commandStruct& cmdSt, int addr, char* buffer, char& len, int& timeout)
 {
-    if (len <1)
+    if (cmdSt.len <1)
         return false;
 
     addStatusToVector(addr, cmdSt);
+    ActionStruct actionSt = stActionMap[m_chStatusVector[addr-1]];
+    getCommandFromAction(actionSt, buffer, len);
+    timeout = actionSt.iTimeOut;
+    if (actionSt.bAlarm)
+        setAlarm(addr);
+    if (actionSt.bFail)
+        setFail(addr);
+    if (actionSt.bNozzleActived)
+        setNozleActived(addr);
     if (buffer[0] == STATUS_IDLE)
     {
     }
@@ -364,5 +370,29 @@ void SCCWirelessRcvrProtocol::addTagDataToMap(commandStruct& cmdSt, char addr)
 void SCCWirelessRcvrProtocol::getCommandFromAction(ActionStruct& actionSt, char* buffer, char& len)
 {
 
+}
+
+void setAlarm(char addr)
+{
+}
+
+void setNozzleActivated(char addr)
+{
+}
+
+void setFail(char addr)
+{
+}
+
+void clearAlarm(char addr)
+{
+}
+
+void clearNozzleActivated(char addr)
+{
+}
+
+void clearFail(char addr)
+{
 }
 
