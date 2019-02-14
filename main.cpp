@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
     char bufferIn[250];
     int len;
 
-    msg = rcvrProtocol.getStrCmd(CMD_CHECKSTATUS, 1, bufferOut, len);
+    msg = rcvrProtocol.getStrCmdStatusCheck(1, bufferOut, len);
 
     msg = rcvrProtocol.convChar2Hex(bufferOut, len);
 
@@ -47,12 +47,20 @@ int main(int argc, char* argv[])
         if (commPort.isRxEvent() == true)
         {
             bool ret = commPort.getData(bufferIn, len);
-            //msg = commPort.getData(bufferIn, len);
-            //cout << "Buffer In (str): " << msg << std::endl;
             if (ret == true)
             {
                 msg = rcvrProtocol.convChar2Hex(bufferIn, len);
                 cout << "Buffer In(Hex): [" << msg << "]. Buffer In(char): [" << bufferIn << "]" << std::endl;
+                std::string strCmd;
+                char resp[256];
+                int addr, respLen;
+                bool bIsValidResponse = rcvrProtocol.getWGTResponse(bufferIn, len, strCmd, addr, resp, respLen);
+                if (bIsValidResponse == true)
+                {
+                    cout << "Valid WGT Response";
+                    if (strCmd == CMD_CHECKSTATUS)
+                        cout << "WGT Status: " << rcvrProtocol.getStrStatus(resp[0]);
+                }
             }
         }
          std::this_thread::sleep_for(std::chrono::seconds(1));
