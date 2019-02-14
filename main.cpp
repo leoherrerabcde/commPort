@@ -32,8 +32,8 @@ int main(int argc, char* argv[])
     char bufferOut[255];
     char bufferIn[250];
     int len;
-
-    msg = rcvrProtocol.getStrCmdStatusCheck(1, bufferOut, len);
+    int addr = 1;
+    msg = rcvrProtocol.getStrCmdStatusCheck(addr, bufferOut, len);
 
     msg = rcvrProtocol.convChar2Hex(bufferOut, len);
 
@@ -42,6 +42,8 @@ int main(int argc, char* argv[])
 
     cout << "Waiting for response" << std::endl;
     msg = "";
+
+    int state = 0;
     do
     {
         if (commPort.isRxEvent() == true)
@@ -53,13 +55,13 @@ int main(int argc, char* argv[])
                 cout << "Buffer In(Hex): [" << msg << "]. Buffer In(char): [" << bufferIn << "]" << std::endl;
                 std::string strCmd;
                 char resp[256];
-                int addr, respLen;
+                int addr = 0, respLen = 0;
                 bool bIsValidResponse = rcvrProtocol.getWGTResponse(bufferIn, len, strCmd, addr, resp, respLen);
                 if (bIsValidResponse == true)
                 {
-                    cout << "Valid WGT Response";
+                    cout << "Valid WGT Response" << std::endl;
                     if (strCmd == CMD_CHECKSTATUS)
-                        cout << "WGT Status: " << rcvrProtocol.getStrStatus(resp[0]);
+                        cout << "WGT Status: " << rcvrProtocol.getStrStatus(resp[0]) << endl;
                 }
             }
         }

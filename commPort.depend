@@ -56,15 +56,16 @@
 
 1549673086 c:\users\lherr_000\documents\proyectos\fuelcontrol\source\camion_surtidor\raspberri_pi\commport\detect_so.h
 
-1550083280 source:/home/pi/Documents/source/commPort/SCCWirelessRcvrProtocol.cpp
+1550110923 source:/home/pi/Documents/source/commPort/SCCWirelessRcvrProtocol.cpp
 	"SCCWirelessRcvrProtocol.h"
 	<sstream>
+	<cstring>
 
 1550105575 /home/pi/Documents/source/commPort/SCCWirelessRcvrProtocol.h
 	<vector>
 	<unordered_map>
 
-1550106196 source:/home/pi/Documents/source/commPort/main.cpp
+1550113023 source:/home/pi/Documents/source/commPort/main.cpp
 	<iostream>
 	<thread>
 	<chrono>

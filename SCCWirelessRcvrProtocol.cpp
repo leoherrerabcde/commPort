@@ -173,8 +173,8 @@ bool SCCWirelessRcvrProtocol::getWGTResponse(std::string& cmd,
             moveBufferToLeft(m_chBufferIn+1,1);
             continue;
         }
-        unsigned char bcc = calcCRC((unsigned char*)m_chBufferIn, (unsigned char*)p);
         ++p;
+        unsigned char bcc = calcCRC((unsigned char*)m_chBufferIn, (unsigned char*)p);
         if ((unsigned char)*p != bcc)
         {
             moveBufferToLeft(m_chBufferIn+1,1);
