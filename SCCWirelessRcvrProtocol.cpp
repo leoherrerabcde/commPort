@@ -67,7 +67,7 @@ SCCWirelessRcvrProtocol::~SCCWirelessRcvrProtocol()
 
 std::string SCCWirelessRcvrProtocol::getStrCmdStatusCheck(int addr,
                                                char* buffer,
-                                               int& len)
+                                               char& len)
 {
     return getStrCmd(CMD_CHECKSTATUS, addr, 0, buffer, len);
 }
@@ -75,14 +75,14 @@ std::string SCCWirelessRcvrProtocol::getStrCmdStatusCheck(int addr,
 std::string SCCWirelessRcvrProtocol::getStrCmdSetAddr(int addr,
                                                int addr2,
                                                char* buffer,
-                                               int& len)
+                                               char& len)
 {
     return getStrCmd(CMD_ADDRESSSETTING, addr, addr2, buffer, len);
 }
 
 std::string SCCWirelessRcvrProtocol::getStrCmdGetTagId(int addr,
                                                char* buffer,
-                                               int& len)
+                                               char& len)
 {
     return getStrCmd(CMD_GETTAGDATA, addr, 0, buffer, len);
 }
@@ -91,7 +91,7 @@ std::string SCCWirelessRcvrProtocol::getStrCmd(const std::string& cmd,
                                                int addr,
                                                int addr2,
                                                char* buffer,
-                                               int& len)
+                                               char& len)
 {
     char* p = buffer;
     char* pBCC;
@@ -128,7 +128,7 @@ unsigned char SCCWirelessRcvrProtocol::calcCRC(unsigned char* pFirst, unsigned c
     return ucBCC;
 }
 
-std::string SCCWirelessRcvrProtocol::convChar2Hex(char* buffer, int& len)
+std::string SCCWirelessRcvrProtocol::convChar2Hex(char* buffer, char& len)
 {
     std::stringstream ss;
 
@@ -141,7 +141,7 @@ std::string SCCWirelessRcvrProtocol::convChar2Hex(char* buffer, int& len)
 bool SCCWirelessRcvrProtocol::getWGTResponse(std::string& cmd,
                                         int& addr,
                                         char* resp,
-                                        int& respLen)
+                                        char& respLen)
 {
     bool bCmd = false;
 
@@ -159,7 +159,7 @@ bool SCCWirelessRcvrProtocol::getWGTResponse(std::string& cmd,
         }
         if (itHeader !=m_chBufferIn)
         {
-            size_t offset = itHeader - m_chBufferIn;
+            char offset = itHeader - m_chBufferIn;
             moveBufferToLeft(itHeader, offset);
         }
 
@@ -213,11 +213,11 @@ bool SCCWirelessRcvrProtocol::getWGTResponse(std::string& cmd,
 }
 
 bool SCCWirelessRcvrProtocol::getWGTResponse(char* buffer,
-                                        int len,
+                                        char len,
                                         std::string& cmd,
                                         int& addr,
                                         char* resp,
-                                        int& respLen)
+                                        char& respLen)
 {
     if (len <= 0)
         return false;
@@ -250,7 +250,7 @@ std::string SCCWirelessRcvrProtocol::getWGTCommand(char cmd)
     return CMD_INVALID;
 }
 
-void SCCWirelessRcvrProtocol::moveBufferToLeft(char* pos, int len)
+void SCCWirelessRcvrProtocol::moveBufferToLeft(char* pos, char len)
 {
     if (len == 0 || pos == m_chBufferIn)
         return;
@@ -325,10 +325,7 @@ bool SCCWirelessRcvrProtocol::nextActionFromStatus(commandStruct& cmdSt, int add
     if (actionSt.bFail)
         setFail(addr);
     if (actionSt.bNozzleActived)
-        setNozleActived(addr);
-    if (buffer[0] == STATUS_IDLE)
-    {
-    }
+        setNozzleActivated(addr);
     return true;
 }
 
@@ -372,27 +369,57 @@ void SCCWirelessRcvrProtocol::getCommandFromAction(ActionStruct& actionSt, char*
 
 }
 
-void setAlarm(char addr)
+void SCCWirelessRcvrProtocol::setAlarm(char addr)
 {
+    setVector(addr, m_bAlarmVector);
 }
 
-void setNozzleActivated(char addr)
+void SCCWirelessRcvrProtocol::setNozzleActivated(char addr)
 {
+    setVector(addr, m_bNozzleActivedVector);
 }
 
-void setFail(char addr)
+void SCCWirelessRcvrProtocol::setFail(char addr)
 {
+    setVector(addr, m_bFailVector);
 }
 
-void clearAlarm(char addr)
+void SCCWirelessRcvrProtocol::clearAlarm(char addr)
 {
+    clearVector(addr, m_bAlarmVector);
 }
 
-void clearNozzleActivated(char addr)
+void SCCWirelessRcvrProtocol::clearNozzleActivated(char addr)
 {
+    clearVector(addr, m_bNozzleActivedVector);
 }
 
-void clearFail(char addr)
+void SCCWirelessRcvrProtocol::clearFail(char addr)
 {
+    clearVector(addr, m_bFailVector);
+}
+
+void SCCWirelessRcvrProtocol::setVector(char addr, std::vector<bool>& vect)
+{
+    if (vect.size() < addr)
+        vect.resize(addr);
+    vect[addr-1] = true;
+}
+
+void SCCWirelessRcvrProtocol::clearVector(char addr, std::vector<bool>& vect)
+{
+    if (vect.size() < addr)
+        vect.resize(addr);
+    vect[addr-1] = false;
+}
+
+bool SCCWirelessRcvrProtocol::isVector(char addr, std::vector<bool>& vect)
+{
+    if (vect.size() < addr)
+    {
+        vect.resize(addr);
+        vect[addr-1] = false;
+    }
+    return vect[addr-1];
 }
 

@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
     */
     char bufferOut[255];
     char bufferIn[250];
-    int len;
+    char len;
     int iAddr = 1;
     msg = rcvrProtocol.getStrCmdStatusCheck(iAddr, bufferOut, len);
 
@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     cout << "Waiting for response" << std::endl;
     msg = "";
 
-    int state = 0;
+    //int state = 0;
     int iTimeOut;
     bool bNextAddr;
     char chLen = 0;
@@ -63,14 +63,17 @@ int main(int argc, char* argv[])
         if (commPort.isRxEvent() == true)
         {
             bNextAddr =false;
-            bool ret = commPort.getData(bufferIn, len);
+            int iLen;
+            bool ret = commPort.getData(bufferIn, iLen);
             if (ret == true)
             {
+                len = (char)iLen;
                 msg = rcvrProtocol.convChar2Hex(bufferIn, len);
                 cout << "Buffer In(Hex): [" << msg << "]. Buffer In(char): [" << bufferIn << "]" << std::endl;
                 std::string strCmd;
                 char resp[256];
-                int addr = 0, respLen = 0;
+                int addr = 0;
+                char respLen = 0;
                 bool bIsValidResponse = rcvrProtocol.getWGTResponse(bufferIn, len, strCmd, addr, resp, respLen);
                 if (bIsValidResponse == true)
                 {

@@ -68,6 +68,7 @@ struct ActionStruct
     ActionStruct(const std::string& cmd, const int timeOut, bool nozzleActived, bool alarm, bool fail)
      : strCmd(cmd), iTimeOut(timeOut), bNozzleActived(nozzleActived), bAlarm(alarm), bFail(fail)
     {}
+    ActionStruct() {}
 };
 
 struct TagDataStruct
@@ -89,12 +90,12 @@ class SCCWirelessRcvrProtocol
         SCCWirelessRcvrProtocol();
         virtual ~SCCWirelessRcvrProtocol();
 
-        std::string convChar2Hex(char* buffer, int& len);
-        std::string getStrCmdStatusCheck(int addr, char* buffer, int& len);
-        std::string getStrCmdSetAddr(int addr, int newAddr, char* buffer, int& len);
-        std::string getStrCmdGetTagId(int addr, char* buffer, int& len);
+        std::string convChar2Hex(char* buffer, char& len);
+        std::string getStrCmdStatusCheck(int addr, char* buffer, char& len);
+        std::string getStrCmdSetAddr(int addr, int newAddr, char* buffer, char& len);
+        std::string getStrCmdGetTagId(int addr, char* buffer, char& len);
 
-        bool getWGTResponse(char* buffer, int len, std::string& cmd, int& addr, char* resp, int& respLen);
+        bool getWGTResponse(char* buffer, char len, std::string& cmd, int& addr, char* resp, char& respLen);
 
         std::string getStrStatus(char status);
 
@@ -103,10 +104,10 @@ class SCCWirelessRcvrProtocol
     protected:
 
         unsigned char calcCRC(unsigned char* pFirst, unsigned char* pEnd);
-        std::string getStrCmd(const std::string& cmd, int addr, int addr2, char* buffer, int& len);
-        void moveBufferToLeft(char* pos, int offset);
+        std::string getStrCmd(const std::string& cmd, int addr, int addr2, char* buffer, char& len);
+        void moveBufferToLeft(char* pos, char offset);
         std::string getWGTCommand(char cmd);
-        bool getWGTResponse(std::string& cmd, int& addr, char* resp, int& respLen);
+        bool getWGTResponse(std::string& cmd, int& addr, char* resp, char& respLen);
         void addCommandToDvcMap(char cmd, char addr, char* resp, char len);
 
         bool nextActionFromStatus(commandStruct& cmdSt, int addr, char* buffer, char& len, int& timeout);
@@ -118,6 +119,18 @@ class SCCWirelessRcvrProtocol
         void addTagDataToMap(commandStruct& cmdSt, char addr);
 
         void getCommandFromAction(ActionStruct& actionSt, char* buffer, char& len);
+
+        void setAlarm(char addr);
+        void setNozzleActivated(char addr);
+        void setFail(char addr);
+        void clearAlarm(char addr);
+        void clearNozzleActivated(char addr);
+        void clearFail(char addr);
+
+        void setVector(char addr, std::vector<bool>& vect);
+        void clearVector(char addr, std::vector<bool>& vect);
+        bool isVector(char addr, std::vector<bool>& vect);
+
 
     private:
 
