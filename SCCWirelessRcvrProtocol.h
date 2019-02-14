@@ -1,8 +1,11 @@
 #ifndef SCCWIRELESSRCVRPROTOCOL_H
 #define SCCWIRELESSRCVRPROTOCOL_H
 
+
 #include <vector>
 #include <unordered_map>
+#include <queue>
+#include <cstring>
 
 #define CMD_INVALID "Invalid"
 #define CMD_CHECKSTATUS "CheckStatus"
@@ -40,6 +43,46 @@ enum Host2WGTCommand
     GetTagData,
 };
 
+struct commandStruct
+{
+    char    command;
+    char    addr;
+    char    len;
+    char    data[60];
+
+    commandStruct(char cmd, char addr, char* resp, char len)
+     : command(cmd), addr(addr), len(len)
+    {
+        memcpy(data, resp, len);
+    }
+};
+
+struct ActionStruct
+{
+    std::string     strCmd;
+    int             iTimeOut;
+    bool            bNozzleActived;
+    bool            bAlarm;
+    bool            bFail;
+
+    ActionStruct(const std::string& cmd, const int timeOut, bool nozzleActived, bool alarm, bool fail)
+     : strCmd(cmd), iTimeOut(timeOut), bNozzleActived(nozzleActived), bAlarm(alarm), bFail(fail)
+    {}
+};
+
+struct TagDataStruct
+{
+    char    chTagData[MAX_WGT_BUFFER_SIZE];
+    char    chLenData;
+
+    TagDataStruct(const char* buffer, const char len) : chLenData(len)
+    {
+        chTagData[0] = '\0';
+        if (chLenData > 0)
+            memcpy(chTagData, buffer, len);
+    }
+};
+
 class SCCWirelessRcvrProtocol
 {
     public:
@@ -51,18 +94,30 @@ class SCCWirelessRcvrProtocol
         std::string getStrCmdSetAddr(int addr, int newAddr, char* buffer, int& len);
         std::string getStrCmdGetTagId(int addr, char* buffer, int& len);
 
-        bool getWGTResponse(char* buffer, int len, std::string& cmd, int& addr, char* resp, int respLen);
+        bool getWGTResponse(char* buffer, int len, std::string& cmd, int& addr, char* resp, int& respLen);
 
         std::string getStrStatus(char status);
 
+        bool nextAction(int addr, char* buffer, char& len, int& timeout);
+
     protected:
 
-        //unsigned char getCRC(const std::string& msg);
         unsigned char calcCRC(unsigned char* pFirst, unsigned char* pEnd);
         std::string getStrCmd(const std::string& cmd, int addr, int addr2, char* buffer, int& len);
         void moveBufferToLeft(char* pos, int offset);
         std::string getWGTCommand(char cmd);
-        bool getWGTResponse(std::string& cmd, int& addr, char* resp, int respLen);
+        bool getWGTResponse(std::string& cmd, int& addr, char* resp, int& respLen);
+        void addCommandToDvcMap(char cmd, char addr, char* resp, char len);
+
+        bool nextActionFromStatus(commandStruct& cmdSt, int addr, char* buffer, char& len, int& timeout);
+        bool nextActionFromAddressSetting(commandStruct& cmdSt, int addr, char* buffer, char& len, int& timeout);
+        bool nextActionFromGetTagData(commandStruct& cmdSt, int addr, char* buffer, char& len, int& timeout);
+
+        void addStatusToVector(char addr, commandStruct& cmdSt);
+
+        void addTagDataToMap(commandStruct& cmdSt, char addr);
+
+        void getCommandFromAction(ActionStruct& actionSt, char* buffer, char& len);
 
     private:
 
@@ -70,6 +125,11 @@ class SCCWirelessRcvrProtocol
         char m_chBufferIn[MAX_WGT_BUFFER_SIZE];
         char* m_pLast;
         int m_iBufferSize;
+
+        std::unordered_map <char, std::queue<commandStruct>> m_DeviceMap;
+
+        std::vector<char> m_chStatusVector;
+        std::unordered_map <char, TagDataStruct> m_TagDataMap;
 };
 
 #endif // SCCWIRELESSRCVRPROTOCOL_H

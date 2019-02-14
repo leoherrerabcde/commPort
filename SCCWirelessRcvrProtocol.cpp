@@ -1,7 +1,7 @@
 #include "SCCWirelessRcvrProtocol.h"
 
 #include <sstream>
-#include <cstring>
+//#include <cstring>
 
 std::vector<std::string> stH2WCmdNameList =
 {
@@ -36,6 +36,22 @@ std::unordered_map<char, std::string> stStatusMap =
     {0x08, "Tag Data Ready"},
     {0x09, "Idle State"},
     {0x0a, "Battery no Power"},
+};
+
+std::unordered_map<char, ActionStruct> stActionMap =
+{
+    {0x4e, {CMD_CHECKSTATUS, 1000, false,  true,  true}},
+    {0x59, {CMD_CHECKSTATUS,  100, false, false, false}},
+    {0x01, {CMD_CHECKSTATUS,  100, false, false, false}},
+    {0x02, {CMD_CHECKSTATUS,  100, false, false, false}},
+    {0x03, {CMD_CHECKSTATUS,  100, false, false, false}},
+    {0x04, {CMD_CHECKSTATUS,  100, false, false, false}},
+    {0x05, {CMD_CHECKSTATUS,  100, false, false, false}},
+    {0x06, {CMD_CHECKSTATUS,   50,  true, false, false}},
+    {0x07, { CMD_GETTAGDATA,   50,  true, false, false}},
+    {0x08, { CMD_GETTAGDATA,   50,  true, false, false}},
+    {0x09, {CMD_CHECKSTATUS,   50, false, false, false}},
+    {0x0a, {CMD_CHECKSTATUS, 1000, false,  true,  true}},
 };
 
 
@@ -125,7 +141,7 @@ std::string SCCWirelessRcvrProtocol::convChar2Hex(char* buffer, int& len)
 bool SCCWirelessRcvrProtocol::getWGTResponse(std::string& cmd,
                                         int& addr,
                                         char* resp,
-                                        int respLen)
+                                        int& respLen)
 {
     bool bCmd = false;
 
@@ -150,23 +166,29 @@ bool SCCWirelessRcvrProtocol::getWGTResponse(std::string& cmd,
         if (m_iBufferSize < MIN_WGT_DATA)
             return false;
 
+        char chCmd, chAddr, chLen, *buf;
+
         char* p = m_chBufferIn + 1;
-        respLen = (int) *p++;
+        respLen = chAddr = *p++;
         if (respLen + 4 > m_iBufferSize)
         {
             moveBufferToLeft(m_chBufferIn+1,1);
             continue;
         }
-        //char* pCmd = p;
-        cmd = getWGTCommand(*p++);
+
+        cmd = getWGTCommand((chCmd = *p++));
         if (*p != ADDRESS_BYTE)
         {
             moveBufferToLeft(m_chBufferIn+1,1);
             continue;
         }
         p++;
-        addr = *p++;
+
+        addr = chAddr = *p++;
+
+        buf = p;
         memcpy(resp, p, respLen - 3);
+        chLen -= 3;
         p += (respLen-3);
         if (*p != ETX_BYTE)
         {
@@ -182,6 +204,7 @@ bool SCCWirelessRcvrProtocol::getWGTResponse(std::string& cmd,
         }
         ++p;
         moveBufferToLeft(p, respLen + 4);
+        addCommandToDvcMap(chCmd, chAddr, buf, chLen);
         bCmd = true;
     }
     while (bCmd == false && m_iBufferSize > 0);
@@ -194,7 +217,7 @@ bool SCCWirelessRcvrProtocol::getWGTResponse(char* buffer,
                                         std::string& cmd,
                                         int& addr,
                                         char* resp,
-                                        int respLen)
+                                        int& respLen)
 {
     if (len <= 0)
         return false;
@@ -247,5 +270,99 @@ void SCCWirelessRcvrProtocol::moveBufferToLeft(char* pos, int len)
 std::string SCCWirelessRcvrProtocol::getStrStatus(char status)
 {
     return stStatusMap[status];
+}
+
+void SCCWirelessRcvrProtocol::addCommandToDvcMap(char cmd, char addr, char* resp, char len)
+{
+    commandStruct cmdSt(cmd, addr, resp, len);
+    auto it = m_DeviceMap.find(addr);
+    if (it == m_DeviceMap.end())
+    {
+        std::queue<commandStruct> cmdList;
+        cmdList.push(cmdSt);
+        m_DeviceMap.insert(std::make_pair(addr, cmdList));
+    }
+    else
+    {
+        it->second.push(cmdSt);
+    }
+}
+
+bool SCCWirelessRcvrProtocol::nextAction(int addr, char* buffer, char& len, int& timeout)
+{
+    auto it = m_DeviceMap.find(addr);
+    if (it == m_DeviceMap.end())
+        return false;
+    commandStruct cmdSt = it->second.front();
+    it->second.pop();
+
+    if (cmdSt.command == stCmdList[CMD_CHECKSTATUS])
+    {
+        return nextActionFromStatus(cmdSt, addr, buffer, len, timeout);
+    }
+    else if (cmdSt.command == stCmdList[CMD_ADDRESSSETTING])
+    {
+        return nextActionFromAddressSetting(cmdSt, addr, buffer, len, timeout);
+    }
+    else if (cmdSt.command == stCmdList[CMD_GETTAGDATA])
+    {
+        return nextActionFromGetTagData(cmdSt, addr, buffer, len, timeout);
+    }
+    else if (cmdSt.command == stCmdList[CMD_INVALID])
+    {
+    }
+    return false;
+}
+
+bool SCCWirelessRcvrProtocol::nextActionFromStatus(commandStruct& cmdSt, int addr, char* buffer, char& len, int& timeout)
+{
+    if (len <1)
+        return false;
+
+    addStatusToVector(addr, cmdSt);
+    if (buffer[0] == STATUS_IDLE)
+    {
+    }
+    return true;
+}
+
+bool SCCWirelessRcvrProtocol::nextActionFromAddressSetting(commandStruct& cmdSt, int addr, char* buffer, char& len, int& timeout)
+{
+    ActionStruct actionSt(CMD_CHECKSTATUS, 100, false, false, false);
+
+    getCommandFromAction(actionSt, buffer, len);
+    timeout = actionSt.iTimeOut;
+    return true;
+}
+
+bool SCCWirelessRcvrProtocol::nextActionFromGetTagData(commandStruct& cmdSt, int addr, char* buffer, char& len, int& timeout)
+{
+    addTagDataToMap(cmdSt, addr);
+    return true;
+}
+
+void SCCWirelessRcvrProtocol::addStatusToVector(char addr, commandStruct& cmdSt)
+{
+    if (addr <1 || cmdSt.len < 1)
+        return;
+
+    if (m_chStatusVector.size() < addr)
+        m_chStatusVector.resize(addr);
+    m_chStatusVector[addr - 1] = cmdSt.data[0];
+}
+
+void SCCWirelessRcvrProtocol::addTagDataToMap(commandStruct& cmdSt, char addr)
+{
+    auto it = m_TagDataMap.find(addr);
+    if (it ==m_TagDataMap.end())
+    {
+        TagDataStruct tagDataSt(cmdSt.data, cmdSt.len);
+        m_TagDataMap.insert(std::make_pair(addr, tagDataSt));
+    }
+}
+
+void SCCWirelessRcvrProtocol::getCommandFromAction(ActionStruct& actionSt, char* buffer, char& len)
+{
+
 }
 
