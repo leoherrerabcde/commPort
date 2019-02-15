@@ -55,9 +55,13 @@ std::unordered_map<char, ActionStruct> stActionMap =
 };
 
 
-SCCWirelessRcvrProtocol::SCCWirelessRcvrProtocol() : m_pLast(m_chBufferIn), m_iBufferSize(0), m_pCommandSt(NULL)
+SCCWirelessRcvrProtocol::SCCWirelessRcvrProtocol() : m_pLast(m_chBufferIn), m_iBufferSize(0)
 {
     //ctor
+    memset(m_bAlarmVector,0, sizeof(bool)*MAX_CHANNELS);
+    memset(m_bFailVector,0, sizeof(bool)*MAX_CHANNELS);
+    memset(m_bNozzleActivedVector,0, sizeof(bool)*MAX_CHANNELS);
+    memset(m_bTagDetected,0, sizeof(bool)*MAX_CHANNELS);
 }
 
 SCCWirelessRcvrProtocol::~SCCWirelessRcvrProtocol()
@@ -188,7 +192,7 @@ bool SCCWirelessRcvrProtocol::getWGTResponse(std::string& cmd,
 
         buf = p;
         memcpy(resp, p, respLen - 3);
-        chLen -= 3;
+        chLen = respLen - 3;
         p += (respLen-3);
         if (*p != ETX_BYTE)
         {
@@ -274,40 +278,35 @@ std::string SCCWirelessRcvrProtocol::getStrStatus(char status)
 
 void SCCWirelessRcvrProtocol::addCommandToDvcMap(char cmd, char addr, char* resp, char len)
 {
-    m_pCommandSt = new commandStruct(cmd, addr, resp, len);
+    if (MAX_CHANNELS < addr)
+        return;
 
-    /*if (m_DeviceVector.size() < addr)
-    {
-        for (char i = m_DeviceVector.size(); i < addr; ++i)
-        {
-            m_DeviceVector.push_back(NULL);
-        }
-    }
-    m_DeviceVector[addr-1] = pCmdSt;*/
+    commandStruct *pCmdSt = &m_DeviceVector[addr-1]; // (cmd, addr, resp, len);
+    pCmdSt->set(cmd, addr, resp, len);
 }
 
 bool SCCWirelessRcvrProtocol::nextAction(int addr, char* buffer, char& len, int& timeout)
 {
-    commandStruct* pCmdSt = m_pCommandSt;
-
-    if (pCmdSt== NULL)
+    if (MAX_CHANNELS < addr)
         return false;
 
+    commandStruct CmdSt = m_DeviceVector[addr-1];
+
     bool res = false;
-    if (pCmdSt->command == stCmdList[CMD_CHECKSTATUS])
+
+    if (CmdSt.command == stCmdList[CMD_CHECKSTATUS])
     {
-        res = nextActionFromStatus(*pCmdSt, addr, buffer, len, timeout);
+        res = nextActionFromStatus(CmdSt, addr, buffer, len, timeout);
     }
-    else if (pCmdSt->command == stCmdList[CMD_ADDRESSSETTING])
+    else if (CmdSt.command == stCmdList[CMD_ADDRESSSETTING])
     {
-        res = nextActionFromAddressSetting(*pCmdSt, addr, buffer, len, timeout);
+        res = nextActionFromAddressSetting(CmdSt, addr, buffer, len, timeout);
     }
-    else if (pCmdSt->command == stCmdList[CMD_GETTAGDATA])
+    else if (CmdSt.command == stCmdList[CMD_GETTAGDATA])
     {
-        res = nextActionFromGetTagData(*pCmdSt, addr, buffer, len, timeout);
+        res = nextActionFromGetTagData(CmdSt, addr, buffer, len, timeout);
     }
 
-    delete pCmdSt;
     return res;
 }
 
@@ -316,24 +315,50 @@ bool SCCWirelessRcvrProtocol::nextActionFromStatus(commandStruct& cmdSt, int add
     if (cmdSt.len <1)
         return false;
 
-    //addStatusToVector(addr, cmdSt);
-    ActionStruct actionSt = stActionMap[m_chStatusVector[addr-1]];
-    getCommandFromAction(actionSt, buffer, len);
+    addStatusToVector(addr, cmdSt);
+    ActionStruct actionSt = getActionFromStatus(m_chStatusVector[addr-1]);
+    getCommandFromAction(actionSt, addr, buffer, len);
+
     timeout = actionSt.iTimeOut;
+
     if (actionSt.bAlarm)
         setAlarm(addr);
+    else
+        clearAlarm(addr);
+
     if (actionSt.bFail)
         setFail(addr);
+    else
+        clearFail(addr);
+
     if (actionSt.bNozzleActived)
         setNozzleActivated(addr);
+    else
+    {
+        clearNozzleActivated(addr);
+        clearTagDetected(addr);
+    }
+
+    if (getStatus(addr) != STATUS_TAG_READ_SUCCEEDS && getStatus(addr) != STATUS_TAG_DATA_READY)
+        clearTagDetected(addr);
+    else
+        setTagDetected(addr);
+
     return true;
+}
+
+char SCCWirelessRcvrProtocol::getStatus(char addr)
+{
+    if (addr > MAX_CHANNELS)
+        return STATUS_FAILURE;
+    return m_chStatusVector[addr-1];
 }
 
 bool SCCWirelessRcvrProtocol::nextActionFromAddressSetting(commandStruct& cmdSt, int addr, char* buffer, char& len, int& timeout)
 {
-    ActionStruct actionSt(CMD_CHECKSTATUS, 100, false, false, false);
+    ActionStruct actionSt(CMD_CHECKSTATUS, 1000, false, false, false);
 
-    getCommandFromAction(actionSt, buffer, len);
+    getCommandFromAction(actionSt, addr, buffer, len);
     timeout = actionSt.iTimeOut;
     return true;
 }
@@ -341,6 +366,13 @@ bool SCCWirelessRcvrProtocol::nextActionFromAddressSetting(commandStruct& cmdSt,
 bool SCCWirelessRcvrProtocol::nextActionFromGetTagData(commandStruct& cmdSt, int addr, char* buffer, char& len, int& timeout)
 {
     addTagDataToMap(cmdSt, addr);
+    setTagDetected(addr);
+
+    ActionStruct actionSt(CMD_CHECKSTATUS, 1000, false, false, false);
+
+    getCommandFromAction(actionSt, addr, buffer, len);
+    timeout = actionSt.iTimeOut;
+
     return true;
 }
 
@@ -349,8 +381,9 @@ void SCCWirelessRcvrProtocol::addStatusToVector(char addr, commandStruct& cmdSt)
     if (addr <1 || cmdSt.len < 1)
         return;
 
-    if (m_chStatusVector.size() < addr)
-        m_chStatusVector.resize(addr);
+    if (MAX_CHANNELS < addr)
+        return;
+
     m_chStatusVector[addr - 1] = cmdSt.data[0];
 }
 
@@ -362,11 +395,26 @@ void SCCWirelessRcvrProtocol::addTagDataToMap(commandStruct& cmdSt, char addr)
         TagDataStruct tagDataSt(cmdSt.data, cmdSt.len);
         m_TagDataMap.insert(std::make_pair(addr, tagDataSt));
     }
+    else
+    {
+        TagDataStruct tagDataSt(cmdSt.data, cmdSt.len);
+        it->second = tagDataSt;
+    }
 }
 
-void SCCWirelessRcvrProtocol::getCommandFromAction(ActionStruct& actionSt, char* buffer, char& len)
+void SCCWirelessRcvrProtocol::getCommandFromAction(ActionStruct& actionSt,char addr, char* buffer, char& len)
 {
-
+    if (actionSt.strCmd == CMD_CHECKSTATUS)
+        getStrCmdStatusCheck(addr, buffer, len);
+    else if (actionSt.strCmd == CMD_ADDRESSSETTING)
+        getStrCmdSetAddr(addr, addr, buffer, len);
+    else if (actionSt.strCmd == CMD_GETTAGDATA)
+        getStrCmdGetTagId(addr, buffer, len);
+    else
+    {
+        *buffer = NULL_CHAR;
+        len = 0;
+    }
 }
 
 void SCCWirelessRcvrProtocol::setAlarm(char addr)
@@ -384,6 +432,12 @@ void SCCWirelessRcvrProtocol::setFail(char addr)
     setVector(addr, m_bFailVector);
 }
 
+void SCCWirelessRcvrProtocol::setTagDetected(char addr)
+{
+    setVector(addr, m_bTagDetected);
+}
+
+
 void SCCWirelessRcvrProtocol::clearAlarm(char addr)
 {
     clearVector(addr, m_bAlarmVector);
@@ -399,27 +453,157 @@ void SCCWirelessRcvrProtocol::clearFail(char addr)
     clearVector(addr, m_bFailVector);
 }
 
-void SCCWirelessRcvrProtocol::setVector(char addr, std::vector<bool>& vect)
+void SCCWirelessRcvrProtocol::clearTagDetected(char addr)
 {
-    if (vect.size() < addr)
-        vect.resize(addr);
+    clearVector(addr, m_bTagDetected);
+}
+
+void SCCWirelessRcvrProtocol::setVector(char addr, bool* vect)
+{
+    if (MAX_CHANNELS < addr)
+        return;
     vect[addr-1] = true;
 }
 
-void SCCWirelessRcvrProtocol::clearVector(char addr, std::vector<bool>& vect)
+void SCCWirelessRcvrProtocol::clearVector(char addr, bool* vect)
 {
-    if (vect.size() < addr)
-        vect.resize(addr);
+    if (MAX_CHANNELS < addr)
+        return;
     vect[addr-1] = false;
 }
 
-bool SCCWirelessRcvrProtocol::isVector(char addr, std::vector<bool>& vect)
+bool SCCWirelessRcvrProtocol::isVector(char addr, bool* vect)
 {
-    if (vect.size() < addr)
-    {
-        vect.resize(addr);
-        vect[addr-1] = false;
-    }
+    if (MAX_CHANNELS < addr)
+        return false;
+
     return vect[addr-1];
 }
 
+ActionStruct SCCWirelessRcvrProtocol::getActionFromStatus(char status)
+{
+    ActionStruct actionSt;
+    switch(status)
+    {
+    case 0x4e:
+        actionSt = {CMD_CHECKSTATUS, 1000, false,  true,  true};
+        break;
+    case 0x59:
+        actionSt = {CMD_CHECKSTATUS, 1000, false, false, false};
+        break;
+    case 0x01:
+        actionSt = {CMD_CHECKSTATUS, 1000, false, false, false};
+        break;
+    case 0x02:
+        actionSt = {CMD_CHECKSTATUS, 1000, false, false, false};
+        break;
+    case 0x03:
+        actionSt = {CMD_CHECKSTATUS, 1000, false, false, false};
+        break;
+    case 0x04:
+        actionSt = {CMD_CHECKSTATUS, 1000, false, false, false};
+        break;
+    case 0x05:
+        actionSt = {CMD_CHECKSTATUS, 1000, false, false, false};
+        break;
+    case 0x06:
+        actionSt = {CMD_CHECKSTATUS,  500,  true, false, false};
+        break;
+    case 0x07:
+        actionSt = { CMD_GETTAGDATA,  500,  true, false, false};
+        break;
+    case 0x08:
+        actionSt = { CMD_GETTAGDATA,  500,  true, false, false};
+        break;
+    case 0x09:
+        actionSt = {CMD_CHECKSTATUS,  500, false, false, false};
+        break;
+    case 0x0a:
+        actionSt = {CMD_CHECKSTATUS, 1000, false,  true,  true};
+        break;
+    default:
+        actionSt = {CMD_CHECKSTATUS, 1000, false, false, false};
+        break;
+    }
+    return actionSt;
+}
+
+std::string SCCWirelessRcvrProtocol::printStatus(char addr)
+{
+    if (addr > MAX_CHANNELS)
+        return "";
+
+    std::stringstream ss;
+
+    ss << "Low Bat: " << TAB_CHAR << boolToString(isAlarm(addr));
+    ss << TAB_CHAR << "Fail: " << TAB_CHAR << boolToString(isFail(addr));
+    ss << TAB_CHAR << "Nozzle Activated:" << TAB_CHAR << boolToString(isNozzleActived(addr));
+    ss << TAB_CHAR << "Tag Detected: " << TAB_CHAR ;
+
+    if (isTagDetected(addr))
+    {
+        char tagBuffer[MAX_WGT_BUFFER_SIZE];
+        char lenTag;
+        getTagId(addr, tagBuffer, lenTag);
+        std::string strTag = convChar2Hex(tagBuffer, lenTag);
+        ss << strTag;
+    }
+    else
+    {
+        ss << boolToString(isTagDetected(addr));
+    }
+    ss << std::endl;
+
+    return std::string(ss.str());
+}
+
+bool SCCWirelessRcvrProtocol::isAlarm(char addr)
+{
+    return isVector(addr, m_bAlarmVector);
+}
+
+bool SCCWirelessRcvrProtocol::isFail(char addr)
+{
+    return isVector(addr, m_bFailVector);
+}
+
+bool SCCWirelessRcvrProtocol::isNozzleActived(char addr)
+{
+    return isVector(addr, m_bNozzleActivedVector);
+}
+
+bool SCCWirelessRcvrProtocol::isTagDetected(char addr)
+{
+    return isVector(addr, m_bTagDetected);
+}
+
+std::string SCCWirelessRcvrProtocol::boolToString(bool b, const std::string& valTrue, const std::string& valFalse)
+{
+    if (b ==true)
+    {
+        if (valTrue != "")
+            return valTrue;
+        return "Yes";
+    }
+    if (valFalse != "")
+        return  valFalse;
+    return "No";
+}
+
+bool SCCWirelessRcvrProtocol::getTagId(char addr, char* tagBuffer, char& len)
+{
+    auto it = m_TagDataMap.find(addr);
+    if (it ==m_TagDataMap.end())
+    {
+        len = 0;
+        tagBuffer[0] = NULL_CHAR;
+        return false;
+    }
+    else
+    {
+        TagDataStruct& tagDataSt = it->second;
+        len = tagDataSt.chLenData;
+        memcpy(tagBuffer, tagDataSt.chTagData, tagDataSt.chLenData);
+    }
+    return true;
+}

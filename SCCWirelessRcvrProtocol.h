@@ -19,8 +19,11 @@
 #define ADDRESS_BYTE 'U'
 #define ETX_BYTE '\3'
 #define NULL_CHAR '\0'
+#define TAB_CHAR  '\t'
 
 #define MAX_WGT_BUFFER_SIZE 512
+
+#define MAX_CHANNELS 16
 
 #define MIN_WGT_DATA 8
 
@@ -60,6 +63,14 @@ struct commandStruct
     commandStruct()
      : command(0), addr(0), len(0)
     {}
+    void set(char cmd, char chAddr, char* resp, char chLen)
+    {
+        command = cmd;
+        addr    = chAddr;
+        len     = chLen;
+        memcpy(data, resp, len);
+    }
+
 };
 
 struct ActionStruct
@@ -112,6 +123,16 @@ class SCCWirelessRcvrProtocol
 
         bool nextAction(int addr, char* buffer, char& len, int& timeout);
 
+        bool isAlarm(char addr);
+        bool isFail(char addr);
+        bool isNozzleActived(char addr);
+        bool isTagDetected(char addr);
+
+        std::string printStatus(char addr);
+
+        bool getTagId(char addr, char* tagBuffer, char& len);
+        char getStatus(char addr);
+
     protected:
 
         unsigned char calcCRC(unsigned char* pFirst, unsigned char* pEnd);
@@ -129,19 +150,25 @@ class SCCWirelessRcvrProtocol
 
         void addTagDataToMap(commandStruct& cmdSt, char addr);
 
-        void getCommandFromAction(ActionStruct& actionSt, char* buffer, char& len);
+        void getCommandFromAction(ActionStruct& actionSt, char addr, char* buffer, char& len);
+
+        ActionStruct getActionFromStatus(char status);
 
         void setAlarm(char addr);
         void setNozzleActivated(char addr);
         void setFail(char addr);
+        void setTagDetected(char addr);
+
         void clearAlarm(char addr);
         void clearNozzleActivated(char addr);
         void clearFail(char addr);
+        void clearTagDetected(char addr);
 
-        void setVector(char addr, std::vector<bool>& vect);
-        void clearVector(char addr, std::vector<bool>& vect);
-        bool isVector(char addr, std::vector<bool>& vect);
+        void setVector(char addr, bool* vect);
+        void clearVector(char addr, bool* vect);
+        bool isVector(char addr, bool* vect);
 
+        std::string boolToString(bool b, const std::string& valTrue = "", const std::string& valFalse = "");
 
     private:
 
@@ -150,14 +177,16 @@ class SCCWirelessRcvrProtocol
         char* m_pLast;
         int m_iBufferSize;
 
-        std::vector <commandStruct*> m_DeviceVector;
-        commandStruct* m_pCommandSt;
+        commandStruct m_DeviceVector[MAX_CHANNELS];
+        //commandStruct* m_pCommandSt;
 
-        std::vector<char> m_chStatusVector;
         std::unordered_map <char, TagDataStruct> m_TagDataMap;
-        std::vector<bool> m_bAlarmVector;
-        std::vector<bool> m_bFailVector;
-        std::vector<bool> m_bNozzleActivedVector;
+
+        char m_chStatusVector[MAX_CHANNELS];
+        bool m_bAlarmVector[MAX_CHANNELS];
+        bool m_bFailVector[MAX_CHANNELS];
+        bool m_bNozzleActivedVector[MAX_CHANNELS];
+        bool m_bTagDetected[MAX_CHANNELS];
 };
 
 #endif // SCCWIRELESSRCVRPROTOCOL_H

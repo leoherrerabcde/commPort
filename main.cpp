@@ -75,12 +75,15 @@ int main(int argc, char* argv[])
                 int addr = 0;
                 char respLen = 0;
                 bool bIsValidResponse = rcvrProtocol.getWGTResponse(bufferIn, len, strCmd, addr, resp, respLen);
+                bool bNextAction = false;
                 if (bIsValidResponse == true)
                 {
                     cout << "Valid WGT Response" << std::endl;
                     if (strCmd == CMD_CHECKSTATUS)
                         cout << "WGT Status: " << rcvrProtocol.getStrStatus(resp[0]) << endl;
-                    rcvrProtocol.nextAction(iAddr, bufferOut, chLen, iTimeOut);
+                    bNextAction = rcvrProtocol.nextAction(iAddr, bufferOut, chLen, iTimeOut);
+                    if (bNextAction == true)
+                        std::cout << rcvrProtocol.printStatus(iAddr);
                 }
             }
         }
