@@ -3,6 +3,7 @@
 
 
 #include <vector>
+#include <list>
 #include <unordered_map>
 #include <queue>
 #include <cstring>
@@ -17,6 +18,7 @@
 
 #define ADDRESS_BYTE 'U'
 #define ETX_BYTE '\3'
+#define NULL_CHAR '\0'
 
 #define MAX_WGT_BUFFER_SIZE 512
 
@@ -55,6 +57,9 @@ struct commandStruct
     {
         memcpy(data, resp, len);
     }
+    commandStruct()
+     : command(0), addr(0), len(0)
+    {}
 };
 
 struct ActionStruct
@@ -68,7 +73,9 @@ struct ActionStruct
     ActionStruct(const std::string& cmd, const int timeOut, bool nozzleActived, bool alarm, bool fail)
      : strCmd(cmd), iTimeOut(timeOut), bNozzleActived(nozzleActived), bAlarm(alarm), bFail(fail)
     {}
-    ActionStruct() {}
+    ActionStruct()
+     : strCmd(""), iTimeOut(0), bNozzleActived(false), bAlarm(false), bFail(false)
+    {}
 };
 
 struct TagDataStruct
@@ -81,6 +88,10 @@ struct TagDataStruct
         chTagData[0] = '\0';
         if (chLenData > 0)
             memcpy(chTagData, buffer, len);
+    }
+    TagDataStruct() : chLenData(0)
+    {
+        chTagData[0] = NULL_CHAR;
     }
 };
 
@@ -139,7 +150,8 @@ class SCCWirelessRcvrProtocol
         char* m_pLast;
         int m_iBufferSize;
 
-        std::unordered_map <char, std::queue<commandStruct>> m_DeviceMap;
+        std::vector <commandStruct*> m_DeviceVector;
+        commandStruct* m_pCommandSt;
 
         std::vector<char> m_chStatusVector;
         std::unordered_map <char, TagDataStruct> m_TagDataMap;

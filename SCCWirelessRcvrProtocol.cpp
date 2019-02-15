@@ -55,7 +55,7 @@ std::unordered_map<char, ActionStruct> stActionMap =
 };
 
 
-SCCWirelessRcvrProtocol::SCCWirelessRcvrProtocol() : m_pLast(m_chBufferIn), m_iBufferSize(0)
+SCCWirelessRcvrProtocol::SCCWirelessRcvrProtocol() : m_pLast(m_chBufferIn), m_iBufferSize(0), m_pCommandSt(NULL)
 {
     //ctor
 }
@@ -274,41 +274,41 @@ std::string SCCWirelessRcvrProtocol::getStrStatus(char status)
 
 void SCCWirelessRcvrProtocol::addCommandToDvcMap(char cmd, char addr, char* resp, char len)
 {
-    commandStruct cmdSt(cmd, addr, resp, len);
-    auto it = m_DeviceMap.find(addr);
-    if (it == m_DeviceMap.end())
+    m_pCommandSt = new commandStruct(cmd, addr, resp, len);
+
+    /*if (m_DeviceVector.size() < addr)
     {
-        std::queue<commandStruct> cmdList;
-        cmdList.push(cmdSt);
-        m_DeviceMap.insert(std::make_pair(addr, cmdList));
+        for (char i = m_DeviceVector.size(); i < addr; ++i)
+        {
+            m_DeviceVector.push_back(NULL);
+        }
     }
-    else
-    {
-        it->second.push(cmdSt);
-    }
+    m_DeviceVector[addr-1] = pCmdSt;*/
 }
 
 bool SCCWirelessRcvrProtocol::nextAction(int addr, char* buffer, char& len, int& timeout)
 {
-    auto it = m_DeviceMap.find(addr);
-    if (it == m_DeviceMap.end())
-        return false;
-    commandStruct cmdSt = it->second.front();
-    it->second.pop();
+    commandStruct* pCmdSt = m_pCommandSt;
 
-    if (cmdSt.command == stCmdList[CMD_CHECKSTATUS])
+    if (pCmdSt== NULL)
+        return false;
+
+    bool res = false;
+    if (pCmdSt->command == stCmdList[CMD_CHECKSTATUS])
     {
-        return nextActionFromStatus(cmdSt, addr, buffer, len, timeout);
+        res = nextActionFromStatus(*pCmdSt, addr, buffer, len, timeout);
     }
-    else if (cmdSt.command == stCmdList[CMD_ADDRESSSETTING])
+    else if (pCmdSt->command == stCmdList[CMD_ADDRESSSETTING])
     {
-        return nextActionFromAddressSetting(cmdSt, addr, buffer, len, timeout);
+        res = nextActionFromAddressSetting(*pCmdSt, addr, buffer, len, timeout);
     }
-    else if (cmdSt.command == stCmdList[CMD_GETTAGDATA])
+    else if (pCmdSt->command == stCmdList[CMD_GETTAGDATA])
     {
-        return nextActionFromGetTagData(cmdSt, addr, buffer, len, timeout);
+        res = nextActionFromGetTagData(*pCmdSt, addr, buffer, len, timeout);
     }
-    return false;
+
+    delete pCmdSt;
+    return res;
 }
 
 bool SCCWirelessRcvrProtocol::nextActionFromStatus(commandStruct& cmdSt, int addr, char* buffer, char& len, int& timeout)
@@ -316,7 +316,7 @@ bool SCCWirelessRcvrProtocol::nextActionFromStatus(commandStruct& cmdSt, int add
     if (cmdSt.len <1)
         return false;
 
-    addStatusToVector(addr, cmdSt);
+    //addStatusToVector(addr, cmdSt);
     ActionStruct actionSt = stActionMap[m_chStatusVector[addr-1]];
     getCommandFromAction(actionSt, buffer, len);
     timeout = actionSt.iTimeOut;
