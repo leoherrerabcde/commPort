@@ -41,9 +41,13 @@
 			<Add library="pthread" />
 		</Linker>
 		<Unit filename="Detect_SO.h" />
+		<Unit filename="SCCArgumentParser.cpp" />
+		<Unit filename="SCCArgumentParser.h" />
 		<Unit filename="SCCCommPort.cpp" />
 		<Unit filename="SCCCommPort.h" />
 		<Unit filename="SCCLinuxComPort.cpp" />
+		<Unit filename="SCCRealTime.cpp" />
+		<Unit filename="SCCRealTime.h" />
 		<Unit filename="SCCWirelessRcvrProtocol.cpp" />
 		<Unit filename="SCCWirelessRcvrProtocol.h" />
 		<Unit filename="main.cpp" />

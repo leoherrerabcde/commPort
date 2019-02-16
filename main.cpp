@@ -6,6 +6,7 @@
 #include "SCCCommPort.h"
 #include "SCCWirelessRcvrProtocol.h"
 #include "SCCRealTime.h"
+#include "SCCArgumentParser.h"
 
 using namespace std;
 
