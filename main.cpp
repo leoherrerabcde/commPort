@@ -5,6 +5,7 @@
 
 #include "SCCCommPort.h"
 #include "SCCWirelessRcvrProtocol.h"
+#include "SCCRealTime.h"
 
 using namespace std;
 
@@ -14,14 +15,17 @@ int main(int argc, char* argv[])
 
     int nPort = 7;
     int baudRate = 9600;
+    float fTimeFactor = 1.0;
     if (argc > 2)
     {
         nPort = std::stoi(argv[1]);
         baudRate = std::stoi(argv[2]);
+        if (argc > 3)
+            fTimeFactor = std::stof(argv[3]);
     }
     SCCCommPort commPort;
     SCCWirelessRcvrProtocol rcvrProtocol;
-
+    SCCRealTime clock;
 
     commPort.openPort(nPort, baudRate);
 
@@ -78,7 +82,7 @@ int main(int argc, char* argv[])
                 bool bNextAction = false;
                 if (bIsValidResponse == true)
                 {
-                    cout << "Valid WGT Response" << std::endl;
+                    cout << clock.getTimeStamp() << " Valid WGT Response" << std::endl;
                     if (strCmd == CMD_CHECKSTATUS)
                         cout << "WGT Status: " << rcvrProtocol.getStrStatus(resp[0]) << endl;
                     bNextAction = rcvrProtocol.nextAction(iAddr, bufferOut, chLen, iTimeOut);
@@ -88,7 +92,7 @@ int main(int argc, char* argv[])
             }
         }
         if (iTimeOut > 0)
-            std::this_thread::sleep_for(std::chrono::milliseconds(iTimeOut));
+            std::this_thread::sleep_for(std::chrono::milliseconds((int)(iTimeOut*fTimeFactor)));
         if (bNextAddr == true)
         {
             //++iAddr;
