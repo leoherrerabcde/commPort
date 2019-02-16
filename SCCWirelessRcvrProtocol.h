@@ -27,6 +27,8 @@
 
 #define MIN_WGT_DATA 8
 
+#define MAX_VARS    4
+
 #define STATUS_FAILURE              0x4e
 #define STATUS_SUCCESS              0x59
 #define STATUS_RQT_ADDR_SETTING     0x01
@@ -40,12 +42,26 @@
 #define STATUS_IDLE                 0x09
 #define STATUS_NO_BATTERY           0x0a
 
+#define VAR_BATTERY_ALARM           "Battery_Alarm"
+#define VAR_FAIL_STATUS             "Fail_Status"
+#define VAR_NOZZLE_ACTIVED          "Nozzle_Actived"
+#define VAR_TAG_DETECTED            "Tag_Detected"
+
 enum Host2WGTCommand
 {
     Invalid = 0,
     StatusCheck,
     AddressSetting,
     GetTagData,
+};
+
+enum VariableName
+{
+    BatteryAlarm = 0,
+    FailStatus,
+    NozzleActived,
+    TagDetected,
+    VariableName_size
 };
 
 struct commandStruct
@@ -104,6 +120,13 @@ struct TagDataStruct
     {
         chTagData[0] = NULL_CHAR;
     }
+};
+
+struct VarStatus
+{
+    bool    bCurrentStatus;
+    int     iThresHold;
+    int     iChangesCount;
 };
 
 class SCCWirelessRcvrProtocol
@@ -170,6 +193,10 @@ class SCCWirelessRcvrProtocol
 
         std::string boolToString(bool b, const std::string& valTrue = "", const std::string& valFalse = "");
 
+        void setVar(int addr, int var);
+        bool clearVar(int addr, int var);
+        bool isSetVar(int addr, int var);
+
     private:
 
         int m_iAddress;
@@ -187,6 +214,7 @@ class SCCWirelessRcvrProtocol
         bool m_bFailVector[MAX_CHANNELS];
         bool m_bNozzleActivedVector[MAX_CHANNELS];
         bool m_bTagDetected[MAX_CHANNELS];
+        VarStatus m_VarStatus[MAX_CHANNELS][MAX_VARS];
 };
 
 #endif // SCCWIRELESSRCVRPROTOCOL_H

@@ -10,10 +10,16 @@
 
 using namespace std;
 
+static bool st_bSendMsgView = false;
+static bool st_bRcvMsgView  = true;
+
+void printSendMsg()
+{
+}
+
 int main(int argc, char* argv[])
 {
-    cout << "Hello world!" << endl;
-
+    int nCount = 0;
     int nPort = 7;
     int baudRate = 9600;
     float fTimeFactor = 1.0;
@@ -30,25 +36,24 @@ int main(int argc, char* argv[])
 
     commPort.openPort(nPort, baudRate);
 
-    std::string msg("1234567890");
-    /*cout << "Sending Message: " << msg << " for testing." << std::endl;
-    commPort.sendData(msg);
-    */
     char bufferOut[255];
     char bufferIn[250];
     char len;
     int iAddr = 1;
+    std::string msg;
+
     msg = rcvrProtocol.getStrCmdStatusCheck(iAddr, bufferOut, len);
 
     msg = rcvrProtocol.convChar2Hex(bufferOut, len);
 
-    cout << "Message: " << msg << " sent." << std::endl;
+    if (st_bSendMsgView)
+        cout << "Message: " << msg << " sent." << std::endl;
     commPort.sendData(bufferOut, len);
 
-    cout << "Waiting for response" << std::endl;
+    if (st_bSendMsgView)
+        cout << "Waiting for response" << std::endl;
     msg = "";
 
-    //int state = 0;
     int iTimeOut;
     bool bNextAddr;
     char chLen = 0;
@@ -58,8 +63,11 @@ int main(int argc, char* argv[])
         iTimeOut = 100;
         if (chLen > 0)
         {
-            msg = rcvrProtocol.convChar2Hex(bufferOut, chLen);
-            cout << "Sending Message: " << msg << std::endl;
+            if (st_bSendMsgView)
+            {
+                msg = rcvrProtocol.convChar2Hex(bufferOut, chLen);
+                cout << "Sending Message: " << msg << std::endl;
+            }
             commPort.sendData(bufferOut, chLen);
             chLen = 0;
             iTimeOut = 20;
@@ -73,8 +81,11 @@ int main(int argc, char* argv[])
             if (ret == true)
             {
                 len = (char)iLen;
-                msg = rcvrProtocol.convChar2Hex(bufferIn, len);
-                cout << "Buffer In(Hex): [" << msg << "]. Buffer In(char): [" << bufferIn << "]" << std::endl;
+                /*if (st_bRcvMsgView)
+                {
+                    msg = rcvrProtocol.convChar2Hex(bufferIn, len);
+                    cout << ++nCount << " Buffer In(Hex): [" << msg << "]. Buffer In(char): [" << bufferIn << "]" << std::endl;
+                }*/
                 std::string strCmd;
                 char resp[256];
                 int addr = 0;
@@ -83,12 +94,16 @@ int main(int argc, char* argv[])
                 bool bNextAction = false;
                 if (bIsValidResponse == true)
                 {
-                    cout << clock.getTimeStamp() << " Valid WGT Response" << std::endl;
-                    if (strCmd == CMD_CHECKSTATUS)
-                        cout << "WGT Status: " << rcvrProtocol.getStrStatus(resp[0]) << endl;
+                    if (st_bRcvMsgView)
+                    {
+                        cout << ++nCount << " " << clock.getTimeStamp() << " Valid WGT Response" << std::endl;
+                        if (strCmd == CMD_CHECKSTATUS)
+                            cout << ++nCount << " WGT Status: " << rcvrProtocol.getStrStatus(resp[0]) << endl;
+                    }
                     bNextAction = rcvrProtocol.nextAction(iAddr, bufferOut, chLen, iTimeOut);
                     if (bNextAction == true)
-                        std::cout << rcvrProtocol.printStatus(iAddr);
+                        if (st_bRcvMsgView)
+                            std::cout << ++nCount << " " << rcvrProtocol.printStatus(iAddr);
                 }
             }
         }
@@ -101,7 +116,7 @@ int main(int argc, char* argv[])
     }
     while (commPort.isOpened());
 
-    cout << "getData()= " << msg << std::endl;
+    //cout << "getData()= " << msg << std::endl;
 
     commPort.closePort();
 

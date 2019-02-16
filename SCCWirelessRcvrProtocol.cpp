@@ -54,6 +54,22 @@ std::unordered_map<char, ActionStruct> stActionMap =
     {0x0a, {CMD_CHECKSTATUS, 1000, false,  true,  true}},
 };
 
+static std::unordered_map<std::string, int> stVariableIndexMap=
+{
+    {VAR_BATTERY_ALARM  , BatteryAlarm},
+    {VAR_FAIL_STATUS    , FailStatus},
+    {VAR_NOZZLE_ACTIVED , NozzleActived},
+    {VAR_TAG_DETECTED   , TagDetected},
+};
+
+static std::unordered_map<int,int> stVariableThresHoldMap =
+{
+    {BatteryAlarm   , 2},
+    {FailStatus     , 2},
+    {NozzleActived  , 3},
+    {TagDetected    , 2},
+};
+
 
 SCCWirelessRcvrProtocol::SCCWirelessRcvrProtocol() : m_pLast(m_chBufferIn), m_iBufferSize(0)
 {
@@ -62,6 +78,11 @@ SCCWirelessRcvrProtocol::SCCWirelessRcvrProtocol() : m_pLast(m_chBufferIn), m_iB
     memset(m_bFailVector,0, sizeof(bool)*MAX_CHANNELS);
     memset(m_bNozzleActivedVector,0, sizeof(bool)*MAX_CHANNELS);
     memset(m_bTagDetected,0, sizeof(bool)*MAX_CHANNELS);
+
+    memset(m_VarStatus, 0, sizeof(VarStatus) * MAX_CHANNELS*VariableName_size);
+    for (int addr = 0; addr < MAX_CHANNELS; ++addr)
+        for (int var = 0; var < VariableName_size; ++var)
+            m_VarStatus[addr][var].iThresHold   = stVariableThresHoldMap[var];
 }
 
 SCCWirelessRcvrProtocol::~SCCWirelessRcvrProtocol()
@@ -336,7 +357,7 @@ bool SCCWirelessRcvrProtocol::nextActionFromStatus(commandStruct& cmdSt, int add
     else
     {
         clearNozzleActivated(addr);
-        clearTagDetected(addr);
+        //clearTagDetected(addr);
     }
 
     if (getStatus(addr) != STATUS_TAG_READ_SUCCEEDS && getStatus(addr) != STATUS_TAG_DATA_READY)
@@ -417,45 +438,85 @@ void SCCWirelessRcvrProtocol::getCommandFromAction(ActionStruct& actionSt,char a
     }
 }
 
+void SCCWirelessRcvrProtocol::setVar(int addr, int var)
+{
+    VarStatus& v = m_VarStatus[addr][var];
+
+    v.bCurrentStatus = true;
+    v.iChangesCount = 0;
+}
+
+bool SCCWirelessRcvrProtocol::clearVar(int addr, int var)
+{
+    VarStatus& v = m_VarStatus[addr][var];
+
+    if (v.bCurrentStatus == true)
+    {
+        ++v.iChangesCount;
+        if (v.iChangesCount >= v.iThresHold)
+        {
+            v.bCurrentStatus = false;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool SCCWirelessRcvrProtocol::isSetVar(int addr, int var)
+{
+    VarStatus& v = m_VarStatus[addr][var];
+
+    return v.bCurrentStatus;
+}
+
+
 void SCCWirelessRcvrProtocol::setAlarm(char addr)
 {
     setVector(addr, m_bAlarmVector);
+    setVar(addr, BatteryAlarm);
 }
 
 void SCCWirelessRcvrProtocol::setNozzleActivated(char addr)
 {
     setVector(addr, m_bNozzleActivedVector);
+    setVar(addr, NozzleActived);
 }
 
 void SCCWirelessRcvrProtocol::setFail(char addr)
 {
     setVector(addr, m_bFailVector);
+    setVar(addr, FailStatus);
 }
 
 void SCCWirelessRcvrProtocol::setTagDetected(char addr)
 {
     setVector(addr, m_bTagDetected);
+    setVar(addr, TagDetected);
 }
 
 
 void SCCWirelessRcvrProtocol::clearAlarm(char addr)
 {
-    clearVector(addr, m_bAlarmVector);
+    if (clearVar(addr, BatteryAlarm))
+        clearVector(addr, m_bAlarmVector);
 }
 
 void SCCWirelessRcvrProtocol::clearNozzleActivated(char addr)
 {
-    clearVector(addr, m_bNozzleActivedVector);
+    if (clearVar(addr, NozzleActived))
+        clearVector(addr, m_bNozzleActivedVector);
 }
 
 void SCCWirelessRcvrProtocol::clearFail(char addr)
 {
-    clearVector(addr, m_bFailVector);
+    if (clearVar(addr, FailStatus))
+        clearVector(addr, m_bFailVector);
 }
 
 void SCCWirelessRcvrProtocol::clearTagDetected(char addr)
 {
-    clearVector(addr, m_bTagDetected);
+    if (clearVar(addr, TagDetected))
+        clearVector(addr, m_bTagDetected);
 }
 
 void SCCWirelessRcvrProtocol::setVector(char addr, bool* vect)
@@ -507,16 +568,16 @@ ActionStruct SCCWirelessRcvrProtocol::getActionFromStatus(char status)
         actionSt = {CMD_CHECKSTATUS, 1000, false, false, false};
         break;
     case 0x06:
-        actionSt = {CMD_CHECKSTATUS,  500,  true, false, false};
+        actionSt = {CMD_CHECKSTATUS, 1000,  true, false, false};
         break;
     case 0x07:
-        actionSt = { CMD_GETTAGDATA,  500,  true, false, false};
+        actionSt = { CMD_GETTAGDATA, 1000,  true, false, false};
         break;
     case 0x08:
-        actionSt = { CMD_GETTAGDATA,  500,  true, false, false};
+        actionSt = { CMD_GETTAGDATA, 1000,  true, false, false};
         break;
     case 0x09:
-        actionSt = {CMD_CHECKSTATUS,  500, false, false, false};
+        actionSt = {CMD_CHECKSTATUS, 1000, false, false, false};
         break;
     case 0x0a:
         actionSt = {CMD_CHECKSTATUS, 1000, false,  true,  true};
