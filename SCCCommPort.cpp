@@ -94,7 +94,7 @@ void SCCCommPort::addRxBuffer(int n)
 
 void SCCCommPort::addTxBuffer(int n)
 {
-    addBuffer(n, m_iRxByteCount);
+    addBuffer(n, m_iTxByteCount);
 }
 
 void SCCCommPort::addBuffer(int n, int& bufferCounter)

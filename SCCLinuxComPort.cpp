@@ -213,6 +213,7 @@ void SCCCommPort::closePort()
 
 void SCCCommPort::flushBuffers()
 {
+return;
     tcflush( m_iUSBPort, TCIFLUSH );
     m_iRxByteCount = 0;
     m_iTxByteCount = 0;
