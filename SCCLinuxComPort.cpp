@@ -127,6 +127,7 @@ bool SCCCommPort::writeMsg(std::string msg)
         {
             msg = msg.substr(bytesWritten);
             count = 0;
+            addTxBuffer(bytesWritten);
         }
         else
             return false;
@@ -151,6 +152,7 @@ bool SCCCommPort::writeMsg(char* msg, size_t len)
         {
             len -= n_written;
             msg += n_written;
+            addTxBuffer(n_written);
             count = 0;
         }
         else
@@ -188,6 +190,7 @@ std::string SCCCommPort::readMsg()
             spot += n;
             m_bRxEvent = true;
             m_bReceived = true;
+            addRxBuffer(n);
         }
     } while(n > 0);
 
@@ -206,6 +209,13 @@ void SCCCommPort::closePort()
         }
         close(m_iUSBPort);
     }
+}
+
+void SCCCommPort::flushBuffers()
+{
+    tcflush( m_iUSBPort, TCIFLUSH );
+    m_iRxByteCount = 0;
+    m_iTxByteCount = 0;
 }
 
 

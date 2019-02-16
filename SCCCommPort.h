@@ -13,6 +13,8 @@
 
 //#include "SerialComm.h"
 
+#define MAX_BUFFER_THRESHOLD    4000
+
 class SCCCommPort
 {
     public:
@@ -38,6 +40,8 @@ class SCCCommPort
         bool isRxEvent() {return m_bReceived;}
         bool isOpened() {return m_bOpened;}
 
+        std::string printCounter();
+
     protected:
 
         std::thread* m_threadRun;
@@ -49,6 +53,11 @@ class SCCCommPort
 
         bool sendByte(char byte);
         char getByte();
+
+        void addRxBuffer(int n);
+        void addTxBuffer(int n);
+        void addBuffer(int n, int& bufferCounter);
+        void flushBuffers();
 
     private:
 
@@ -69,6 +78,9 @@ class SCCCommPort
         bool m_bSent;
         bool m_bReceived;
         bool m_bRxEvent;
+
+        int m_iRxByteCount;
+        int m_iTxByteCount;
 };
 
 #endif // SCCCOMMPORT_H

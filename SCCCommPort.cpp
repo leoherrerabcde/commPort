@@ -40,6 +40,9 @@ SCCCommPort::SCCCommPort()
     m_iBaudRate = 9600;
     m_iStopBits = 1;
     m_iParity = 0;
+
+    m_iRxByteCount = 0;
+    m_iTxByteCount = 0;
 }
 
 SCCCommPort::~SCCCommPort()
@@ -74,6 +77,31 @@ bool SCCCommPort::getData(char* buffer, int& len)
     m_bReceived = false;
 
     return true;
+}
+
+std::string SCCCommPort::printCounter()
+{
+    std::stringstream ss;
+
+    ss << "Rx:\t" << m_iRxByteCount << "\tTx:\t" << m_iTxByteCount << "\t";
+    return std::string(ss.str());
+}
+
+void SCCCommPort::addRxBuffer(int n)
+{
+    addBuffer(n, m_iRxByteCount);
+}
+
+void SCCCommPort::addTxBuffer(int n)
+{
+    addBuffer(n, m_iRxByteCount);
+}
+
+void SCCCommPort::addBuffer(int n, int& bufferCounter)
+{
+    bufferCounter += n;
+    if (bufferCounter >= MAX_BUFFER_THRESHOLD)
+        flushBuffers();
 }
 
 #ifdef WINDOW_OS
@@ -388,5 +416,10 @@ std::string SCCCommPort::getData()
 
     return m_Buffer;
 }
+
+void SCCCommPort::flushBuffers()
+{
+}
+
 #endif // WINDOW_OS
 

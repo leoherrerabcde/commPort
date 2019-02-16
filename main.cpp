@@ -96,14 +96,14 @@ int main(int argc, char* argv[])
                 {
                     if (st_bRcvMsgView)
                     {
-                        cout << ++nCount << " " << clock.getTimeStamp() << " Valid WGT Response" << std::endl;
+                        cout << ++nCount << " " << commPort.printCounter() << clock.getTimeStamp() << " Valid WGT Response" << std::endl;
                         if (strCmd == CMD_CHECKSTATUS)
                             cout << ++nCount << " WGT Status: " << rcvrProtocol.getStrStatus(resp[0]) << endl;
                     }
                     bNextAction = rcvrProtocol.nextAction(iAddr, bufferOut, chLen, iTimeOut);
                     if (bNextAction == true)
                         if (st_bRcvMsgView)
-                            std::cout << ++nCount << " " << rcvrProtocol.printStatus(iAddr);
+                            std::cout << ++nCount << " " << commPort.printCounter() << rcvrProtocol.printStatus(iAddr);
                 }
             }
         }
