@@ -3,6 +3,7 @@
 #include <chrono>
 #include <string>
 #include <sstream>
+#include <algorithm>
 
 #include "SCCCommPort.h"
 #include "SCCWirelessRcvrProtocol.h"
@@ -68,7 +69,14 @@ int main(int argc, char* argv[])
         if (argc > 3)
             remotePort = std::stoi(argv[3]);
         if (argc > 4)
-            fTimeFactor = std::stof(argv[4]);
+        {
+            std::string strArg(argv[4]);
+            if (std::all_of(strArg.begin(), strArg.end(), ::isdigit))
+                fTimeFactor = std::stof(argv[4]);
+            else
+                if (strArg == "ViewSend")
+                    st_bSendMsgView = true;
+        }
     }
 
     if (remotePort)
@@ -94,12 +102,12 @@ int main(int argc, char* argv[])
 
     msg = rcvrProtocol.convChar2Hex(bufferOut, len);
 
-    /*if (st_bSendMsgView)
-        printMsg << "Message: " << msg << " sent." << std::endl;*/
+    if (st_bSendMsgView)
+        std::cout << "Message: " << msg << " sent." << std::endl;
     commPort.sendData(bufferOut, len);
 
-    /*if (st_bSendMsgView)
-        cout << "Waiting for response" << std::endl;*/
+    if (st_bSendMsgView)
+        cout << "Waiting for response" << std::endl;
     msg = "";
 
     int iTimeOut;
@@ -114,7 +122,7 @@ int main(int argc, char* argv[])
             if (st_bSendMsgView)
             {
                 msg = rcvrProtocol.convChar2Hex(bufferOut, chLen);
-                //cout << "Sending Message: " << msg << std::endl;
+                cout << "Sending Message: " << msg << std::endl;
             }
             commPort.sendData(bufferOut, chLen);
             chLen = 0;

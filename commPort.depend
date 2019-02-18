@@ -6,12 +6,13 @@
 1548792103 /home/pi/Documents/source/main_control/SCCLog.h
 	<string>
 
-1550512684 source:/home/pi/Documents/source/commPort/main.cpp
+1550515927 source:/home/pi/Documents/source/commPort/main.cpp
 	<iostream>
 	<thread>
 	<chrono>
 	<string>
 	<sstream>
+	<algorithm>
 	"SCCCommPort.h"
 	"SCCWirelessRcvrProtocol.h"
 	"SCCRealTime.h"
