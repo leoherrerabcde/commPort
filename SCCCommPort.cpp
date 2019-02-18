@@ -83,7 +83,11 @@ std::string SCCCommPort::printCounter()
 {
     std::stringstream ss;
 
-    ss << "Rx:\t" << m_iRxByteCount << "\tTx:\t" << m_iTxByteCount << "\t";
+    ss << "Rx:\t" << m_iRxByteCount
+        << "\tTx:\t" << m_iTxByteCount
+        << "\tLoop:\t" << m_loopCounter
+        << "\tLoopRx:\t" << m_iLoopRx;
+
     return std::string(ss.str());
 }
 
@@ -190,7 +194,7 @@ bool ret = true;
         while (m_bOpened == true)
         {
             //bool ret = WaitCommEvent (m_hPort, &dwEventMask, &ov);
-
+            ++m_loopCounter;
             if ((dwEventMask & EV_RXCHAR) == EV_RXCHAR)
             {
                 m_bRxEvent = false;

@@ -113,23 +113,27 @@ int main(int argc, char* argv[])
     int iTimeOut;
     bool bNextAddr;
     char chLen = 0;
-    char chLenLast = 0;
+    //char chLenLast = 0;
     int iNoRxCounter = 0;
     do
     {
         bNextAddr = true;
         iTimeOut = 1000;
         if (iNoRxCounter >= 5)
-            chLen = chLenLast;
+        {
+            iNoRxCounter = 0;
+            rcvrProtocol.getStrCmdStatusCheck(iAddr, bufferOut, chLen);
+        }
         if (chLen > 0)
         {
             if (st_bSendMsgView)
             {
+                cout << commPort.printCounter() << std::endl;
                 msg = rcvrProtocol.convChar2Hex(bufferOut, chLen);
-                cout << "Sending Message: " << msg << std::endl;
+                cout << SCCRealTime::getTimeStamp() << ',' << "Sending Message: " << msg << std::endl;
             }
             commPort.sendData(bufferOut, chLen);
-            chLenLast = chLen;
+            //chLenLast = chLen;
             chLen = 0;
             iTimeOut = 20;
             bNextAddr = false;

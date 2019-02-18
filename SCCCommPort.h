@@ -81,6 +81,9 @@ class SCCCommPort
 
         int m_iRxByteCount;
         int m_iTxByteCount;
+
+        int m_loopCounter;
+        int m_iLoopRx;
 };
 
 #endif // SCCCOMMPORT_H

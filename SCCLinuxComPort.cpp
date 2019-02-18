@@ -95,10 +95,13 @@ bool SCCCommPort::openPort(const int iPort, const int baudRate)
 
 void SCCCommPort::main_loop()
 {
+    m_loopCounter = 0;
+    m_iLoopRx = 0;
     if (m_bOpened == true)
     {
         while (m_bOpened == true)
         {
+            ++m_loopCounter;
             m_bRxEvent = false;
             m_Buffer += readMsg();
 
@@ -171,23 +174,24 @@ std::string SCCCommPort::readMsg()
     if (m_bOpened == false)
         return '\0';
 
-    int n = 0,
-        spot = 0;
+    int n = 0;
+        //spot = 0;
     char buf = '\0';
 
     /* Whole response*/
-    char response[1024];
-    memset(response, '\0', sizeof response);
+    /*char response[1024];
+    memset(response, '\0', sizeof response);*/
     std::string strMsg;
 
     do {
+        ++m_iLoopRx;
         n = read( m_iUSBPort, &buf, 1 );
-        if (n >0 && spot < 1024)
+        if (n >0)
         {
-            response[spot] = buf;
+            //response[spot] = buf;
             m_chBufferIn.push(buf);
-            strMsg += buf;
-            spot += n;
+            //strMsg += buf;
+            //spot += n;
             m_bRxEvent = true;
             m_bReceived = true;
             addRxBuffer(n);
