@@ -25,10 +25,20 @@ struct ArgumentStruct
     bool                detected;
     std::string         value;
 
-    ArgumentStruct(const std::string& argName, ArgumentType type, ArgumentValueType valType)
-    : strArgName(argName), argType(type), valueType(valType)
+    ArgumentStruct() : detected(false)
     {}
-    ArgumentStruct() {}
+
+    ArgumentStruct(const std::string& argName, ArgumentType type, ArgumentValueType valType)
+    : strArgName(argName), argType(type), valueType(valType), detected(false)
+    {}
+
+    ArgumentStruct(const std::string& argName, ArgumentValueType valType, std::string val)
+    : strArgName(argName), argType(Required), valueType(valType), detected(true), value(val)
+    {}
+
+    ArgumentStruct(const std::string& argName, ArgumentType type, ArgumentValueType valType, bool valid, std::string val)
+    : strArgName(argName), argType(type), valueType(valType), detected(valid), value(val)
+    {}
 
     bool isDetected(const std::string& argName);
 
@@ -37,6 +47,26 @@ struct ArgumentStruct
     bool getValue(const std::string& argName, std::string& val, const std::string& valDefault = "");
     /*bool getValue(const std::string& argName, int& val);
     bool getValue(const std::string& argName, std::string& val);*/
+    bool getValue(int& val, const int& valDefault = 0)
+    {
+        if (!detected)
+        {
+            val = valDefault;
+            return false;
+        }
+        val = std::stoi(value);
+        return true;
+    }
+    bool getValue(std::string& val, const std::string& valDefault = 0)
+    {
+        if (!detected)
+        {
+            val = valDefault;
+            return false;
+        }
+        val = value;
+        return true;
+    }
 };
 
 class SCCArgumentParser

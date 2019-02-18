@@ -42,6 +42,7 @@
 		</Linker>
 		<Unit filename="../main_control/CSocket.cpp" />
 		<Unit filename="../main_control/CSocket.h" />
+		<Unit filename="../main_control/SCCDeviceNames.h" />
 		<Unit filename="Detect_SO.h" />
 		<Unit filename="SCCArgumentParser.cpp" />
 		<Unit filename="SCCArgumentParser.h" />

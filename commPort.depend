@@ -6,7 +6,7 @@
 1548792103 /home/pi/Documents/source/main_control/SCCLog.h
 	<string>
 
-1550476664 source:/home/pi/Documents/source/commPort/main.cpp
+1550512684 source:/home/pi/Documents/source/commPort/main.cpp
 	<iostream>
 	<thread>
 	<chrono>
@@ -17,6 +17,7 @@
 	"SCCRealTime.h"
 	"SCCArgumentParser.h"
 	"../main_control/CSocket.h"
+	"../main_control/SCCDeviceNames.h"
 
 1550348939 /home/pi/Documents/source/commPort/SCCCommPort.h
 	"Detect_SO.h"
@@ -37,7 +38,7 @@
 1550476128 /home/pi/Documents/source/commPort/SCCRealTime.h
 	<iostream>
 
-1550435784 /home/pi/Documents/source/commPort/SCCArgumentParser.h
+1550508543 /home/pi/Documents/source/commPort/SCCArgumentParser.h
 	<unordered_map>
 
 1550437260 /home/pi/Documents/source/main_control/CSocket.h
@@ -69,7 +70,7 @@
 	<sstream>
 	<unordered_map>
 
-1550352338 source:/home/pi/Documents/source/commPort/SCCLinuxComPort.cpp
+1550512565 source:/home/pi/Documents/source/commPort/SCCLinuxComPort.cpp
 	"SCCCommPort.h"
 	<termios.h>
 	<unordered_map>
@@ -95,4 +96,6 @@
 	"CSocket.h"
 	"SCCLog.h"
 	<vector>
+
+1550510439 /home/pi/Documents/source/main_control/SCCDeviceNames.h
 

@@ -9,10 +9,9 @@
 #include "SCCRealTime.h"
 #include "SCCArgumentParser.h"
 #include "../main_control/CSocket.h"
+#include "../main_control/SCCDeviceNames.h"
 
 using namespace std;
-
-#define DEVICE_NAME "RFID_BOQUILLA"
 
 static bool st_bSendMsgView = false;
 static bool st_bRcvMsgView  = true;
@@ -26,8 +25,8 @@ std::string firstMessage()
     std::stringstream ss;
 
     ss << "{";
-    ss << "Device:" << DEVICE_NAME << ",";
-    ss << "pid:" << getpid();
+    ss << DEVICE_NAME << DEVICE_RFID_BOQUILLA << ",";
+    ss << SERVICE_PID << getpid();
     ss << "}";
 
     return std::string(ss.str());

@@ -182,7 +182,7 @@ std::string SCCCommPort::readMsg()
 
     do {
         n = read( m_iUSBPort, &buf, 1 );
-        if (n >0)
+        if (n >0 && spot < 1024)
         {
             response[spot] = buf;
             m_chBufferIn.push(buf);
