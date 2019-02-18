@@ -12,21 +12,42 @@
 
 using namespace std;
 
+#define DEVICE_NAME "RFID_BOQUILLA"
+
 static bool st_bSendMsgView = false;
 static bool st_bRcvMsgView  = true;
 
 CSocket sckComPort;
 
+bool bConnected     = false;
+
+std::string firstMessage()
+{
+    std::stringstream ss;
+
+    ss << "{";
+    ss << "Device:" << DEVICE_NAME << ",";
+    ss << "pid:" << getpid();
+    ss << "}";
+
+    return std::string(ss.str());
+}
+
 void printMsg(std::string msg)
 {
     if (sckComPort.isConnected())
     {
+        if (bConnected == false)
+        {
+            bConnected = true;
+            sckComPort.sendData(firstMessage());
+        }
         sckComPort.sendData(msg);
     }
     else
     {
-        msg += '\n';
-        std::cout << msg;
+        //msg += '\n';
+        std::cout << SCCRealTime::getTimeStamp() << ',' << msg << std::endl;
     }
 }
 
@@ -38,8 +59,7 @@ int main(int argc, char* argv[])
     float fTimeFactor   = 1.0;
     int remotePort      = 0;
 
-    bool bConnecting    = false;
-    bool bConnected     = false;
+    //bool bConnecting    = false;
     //int  iSckCounter    = 0;
 
     if (argc > 2)
@@ -48,12 +68,14 @@ int main(int argc, char* argv[])
         baudRate = std::stoi(argv[2]);
         if (argc > 3)
             remotePort = std::stoi(argv[3]);
+        if (argc > 4)
+            fTimeFactor = std::stof(argv[4]);
     }
 
     if (remotePort)
     {
         sckComPort.connect("127.0.0.1", remotePort);
-        bConnecting = true;
+        //bConnecting = true;
         bConnected  = false;
         //iSckCounter = 0;
     }
@@ -144,23 +166,23 @@ int main(int argc, char* argv[])
         {
             //++iAddr;
         }
-        if (bConnecting ==true || bConnected == true)
+        if (/*bConnecting ==true || */bConnected == true)
         {
             if (sckComPort.getState() == sckError)
             {
                 if (remotePort)
                 {
                     sckComPort.connect("127.0.0.1", remotePort);
-                    bConnecting = true;
+                    //bConnecting = true;
                     bConnected  = false;
                     //iSckCounter = 0;
                 }
             }
-            if (sckComPort.isConnected())
+            /*if (sckComPort.isConnected())
             {
-                bConnecting = false;
+                //bConnecting = false;
                 bConnected  = true;
-            }
+            }*/
         }
     }
     while (commPort.isOpened());

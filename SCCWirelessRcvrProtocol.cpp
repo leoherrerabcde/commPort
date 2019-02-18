@@ -601,7 +601,7 @@ std::string SCCWirelessRcvrProtocol::printStatus(char addr)
     ss << "LowBat" << ASSIGN_CHAR << boolToString(isAlarm(addr));
     ss << SEPARATOR_CHAR << "Fail" << ASSIGN_CHAR << boolToString(isFail(addr));
     ss << SEPARATOR_CHAR << "NozzleActivated" << ASSIGN_CHAR << boolToString(isNozzleActived(addr));
-    ss << SEPARATOR_CHAR << "TagDetected " << ASSIGN_CHAR ;
+    ss << SEPARATOR_CHAR << "TagDetected" << ASSIGN_CHAR ;
 
     if (isTagDetected(addr))
     {

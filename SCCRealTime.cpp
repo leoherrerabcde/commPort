@@ -2,7 +2,7 @@
 
 #include <ctime>
 #include <sstream>
-
+#include <iomanip>
 
 SCCRealTime::SCCRealTime()
 {
@@ -20,8 +20,11 @@ std::string SCCRealTime::getTimeStamp()
     std::tm* now = std::localtime(&t);
     std::stringstream ss;
 
-    ss << (now->tm_hour ) << ':'
-         << (now->tm_min) << ':'
-         <<  now->tm_sec;
+    ss << std::setfill('0') << std::setw(2) << now->tm_hour;
+    ss << ':';
+    ss << std::setfill('0') << std::setw(2) << now->tm_min;
+    ss << ':';
+    ss << std::setfill('0') << std::setw(2) << now->tm_sec;
+
     return std::string(ss.str());
 }

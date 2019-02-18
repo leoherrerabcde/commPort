@@ -9,7 +9,7 @@ class SCCRealTime
         SCCRealTime();
         virtual ~SCCRealTime();
 
-        std::string getTimeStamp();
+        static std::string getTimeStamp();
 
     protected:
 

@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="0 115200 0.25" />
+				<Option parameters="0 115200 4000 1.0" />
 				<Compiler>
 					<Add option="-std=c++11" />
 					<Add option="-g" />
@@ -40,6 +40,8 @@
 		<Linker>
 			<Add library="pthread" />
 		</Linker>
+		<Unit filename="../main_control/CSocket.cpp" />
+		<Unit filename="../main_control/CSocket.h" />
 		<Unit filename="Detect_SO.h" />
 		<Unit filename="SCCArgumentParser.cpp" />
 		<Unit filename="SCCArgumentParser.h" />
