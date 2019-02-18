@@ -1,6 +1,7 @@
 #include "SCCWirelessRcvrProtocol.h"
 
 #include <sstream>
+#include <iomanip>
 //#include <cstring>
 
 std::vector<std::string> stH2WCmdNameList =
@@ -158,7 +159,7 @@ std::string SCCWirelessRcvrProtocol::convChar2Hex(char* buffer, char& len)
     std::stringstream ss;
 
     for (int i = 0; i < len; ++i)
-        ss << std::hex << (int)(unsigned char)*buffer++ << " | ";
+        ss << std::setfill('0') << std::setw(2) << std::hex << (int)(unsigned char)*buffer++; //<< " | ";
     //std::string msg;
     return std::string(ss.str());
 }
@@ -596,25 +597,30 @@ std::string SCCWirelessRcvrProtocol::printStatus(char addr)
 
     std::stringstream ss;
 
-    ss << "Low Bat: " << TAB_CHAR << boolToString(isAlarm(addr));
-    ss << TAB_CHAR << "Fail: " << TAB_CHAR << boolToString(isFail(addr));
-    ss << TAB_CHAR << "Nozzle Activated:" << TAB_CHAR << boolToString(isNozzleActived(addr));
-    ss << TAB_CHAR << "Tag Detected: " << TAB_CHAR ;
+    ss << "{" ;
+    ss << "LowBat" << ASSIGN_CHAR << boolToString(isAlarm(addr));
+    ss << SEPARATOR_CHAR << "Fail" << ASSIGN_CHAR << boolToString(isFail(addr));
+    ss << SEPARATOR_CHAR << "NozzleActivated" << ASSIGN_CHAR << boolToString(isNozzleActived(addr));
+    ss << SEPARATOR_CHAR << "TagDetected " << ASSIGN_CHAR ;
 
     if (isTagDetected(addr))
     {
         char tagBuffer[MAX_WGT_BUFFER_SIZE];
         char lenTag;
         getTagId(addr, tagBuffer, lenTag);
-        std::string strTag = convChar2Hex(tagBuffer, lenTag);
-        ss << strTag;
+        if (lenTag)
+        {
+            std::string strTag = convChar2Hex(tagBuffer, lenTag);
+            ss << strTag;
+        }
+        else
+            ss << boolToString(false);
     }
     else
     {
         ss << boolToString(isTagDetected(addr));
     }
-    ss << std::endl;
-
+    ss << "}";
     return std::string(ss.str());
 }
 
@@ -644,11 +650,11 @@ std::string SCCWirelessRcvrProtocol::boolToString(bool b, const std::string& val
     {
         if (valTrue != "")
             return valTrue;
-        return "Yes";
+        return "true";
     }
     if (valFalse != "")
         return  valFalse;
-    return "No";
+    return "false";
 }
 
 bool SCCWirelessRcvrProtocol::getTagId(char addr, char* tagBuffer, char& len)

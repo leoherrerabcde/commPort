@@ -20,6 +20,8 @@
 #define ETX_BYTE '\3'
 #define NULL_CHAR '\0'
 #define TAB_CHAR  '\t'
+#define SEPARATOR_CHAR  ','
+#define ASSIGN_CHAR     ':'
 
 #define MAX_WGT_BUFFER_SIZE 512
 

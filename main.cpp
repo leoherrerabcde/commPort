@@ -2,33 +2,60 @@
 #include <thread>
 #include <chrono>
 #include <string>
+#include <sstream>
 
 #include "SCCCommPort.h"
 #include "SCCWirelessRcvrProtocol.h"
 #include "SCCRealTime.h"
 #include "SCCArgumentParser.h"
+#include "../main_control/CSocket.h"
 
 using namespace std;
 
 static bool st_bSendMsgView = false;
 static bool st_bRcvMsgView  = true;
 
-void printSendMsg()
+CSocket sckComPort;
+
+void printMsg(std::string msg)
 {
+    if (sckComPort.isConnected())
+    {
+        sckComPort.sendData(msg);
+    }
+    else
+    {
+        msg += '\n';
+        std::cout << msg;
+    }
 }
 
 int main(int argc, char* argv[])
 {
-    int nCount = 0;
-    int nPort = 7;
-    int baudRate = 9600;
-    float fTimeFactor = 1.0;
+    //int nCount          = 0;
+    int nPort           = 7;
+    int baudRate        = 9600;
+    float fTimeFactor   = 1.0;
+    int remotePort      = 0;
+
+    bool bConnecting    = false;
+    bool bConnected     = false;
+    //int  iSckCounter    = 0;
+
     if (argc > 2)
     {
         nPort = std::stoi(argv[1]);
         baudRate = std::stoi(argv[2]);
         if (argc > 3)
-            fTimeFactor = std::stof(argv[3]);
+            remotePort = std::stoi(argv[3]);
+    }
+
+    if (remotePort)
+    {
+        sckComPort.connect("127.0.0.1", remotePort);
+        bConnecting = true;
+        bConnected  = false;
+        //iSckCounter = 0;
     }
     SCCCommPort commPort;
     SCCWirelessRcvrProtocol rcvrProtocol;
@@ -46,12 +73,12 @@ int main(int argc, char* argv[])
 
     msg = rcvrProtocol.convChar2Hex(bufferOut, len);
 
-    if (st_bSendMsgView)
-        cout << "Message: " << msg << " sent." << std::endl;
+    /*if (st_bSendMsgView)
+        printMsg << "Message: " << msg << " sent." << std::endl;*/
     commPort.sendData(bufferOut, len);
 
-    if (st_bSendMsgView)
-        cout << "Waiting for response" << std::endl;
+    /*if (st_bSendMsgView)
+        cout << "Waiting for response" << std::endl;*/
     msg = "";
 
     int iTimeOut;
@@ -66,7 +93,7 @@ int main(int argc, char* argv[])
             if (st_bSendMsgView)
             {
                 msg = rcvrProtocol.convChar2Hex(bufferOut, chLen);
-                cout << "Sending Message: " << msg << std::endl;
+                //cout << "Sending Message: " << msg << std::endl;
             }
             commPort.sendData(bufferOut, chLen);
             chLen = 0;
@@ -97,13 +124,17 @@ int main(int argc, char* argv[])
                     if (st_bRcvMsgView)
                     {
                         //cout << ++nCount << " " << commPort.printCounter() << clock.getTimeStamp() << " Valid WGT Response" << std::endl;
-                        if (strCmd == CMD_CHECKSTATUS)
-                            cout << ++nCount << " WGT Status: " << rcvrProtocol.getStrStatus(resp[0]) << endl;
+                        /*if (strCmd == CMD_CHECKSTATUS)
+                            cout << ++nCount << " WGT Status: " << rcvrProtocol.getStrStatus(resp[0]) << endl;*/
                     }
                     bNextAction = rcvrProtocol.nextAction(iAddr, bufferOut, chLen, iTimeOut);
                     if (bNextAction == true)
                         if (st_bRcvMsgView)
-                            std::cout << ++nCount << " " << commPort.printCounter() << rcvrProtocol.printStatus(iAddr);
+                        {
+                            std::stringstream ss;
+                            //ss << ++nCount << " " << commPort.printCounter() << rcvrProtocol.printStatus(iAddr) << std::endl;
+                            printMsg(rcvrProtocol.printStatus(iAddr));
+                        }
                 }
             }
         }
@@ -113,11 +144,28 @@ int main(int argc, char* argv[])
         {
             //++iAddr;
         }
+        if (bConnecting ==true || bConnected == true)
+        {
+            if (sckComPort.getState() == sckError)
+            {
+                if (remotePort)
+                {
+                    sckComPort.connect("127.0.0.1", remotePort);
+                    bConnecting = true;
+                    bConnected  = false;
+                    //iSckCounter = 0;
+                }
+            }
+            if (sckComPort.isConnected())
+            {
+                bConnecting = false;
+                bConnected  = true;
+            }
+        }
     }
     while (commPort.isOpened());
 
-    //cout << "getData()= " << msg << std::endl;
-
+    sckComPort.disconnect();
     commPort.closePort();
 
     return 0;
