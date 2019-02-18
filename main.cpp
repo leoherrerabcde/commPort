@@ -113,10 +113,14 @@ int main(int argc, char* argv[])
     int iTimeOut;
     bool bNextAddr;
     char chLen = 0;
+    char chLenLast = 0;
+    int iNoRxCounter = 0;
     do
     {
         bNextAddr = true;
-        iTimeOut = 100;
+        iTimeOut = 1000;
+        if (iNoRxCounter >= 5)
+            chLen = chLenLast;
         if (chLen > 0)
         {
             if (st_bSendMsgView)
@@ -125,12 +129,14 @@ int main(int argc, char* argv[])
                 cout << "Sending Message: " << msg << std::endl;
             }
             commPort.sendData(bufferOut, chLen);
+            chLenLast = chLen;
             chLen = 0;
             iTimeOut = 20;
             bNextAddr = false;
         }
         if (commPort.isRxEvent() == true)
         {
+            iNoRxCounter = 0;
             bNextAddr =false;
             int iLen;
             bool ret = commPort.getData(bufferIn, iLen);
@@ -191,6 +197,7 @@ int main(int argc, char* argv[])
                 bConnected  = true;
             }*/
         }
+        ++iNoRxCounter;
     }
     while (commPort.isOpened());
 
