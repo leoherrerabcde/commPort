@@ -26,8 +26,8 @@ std::string firstMessage()
     std::stringstream ss;
 
     ss << "{";
-    ss << DEVICE_NAME << DEVICE_RFID_BOQUILLA << ",";
-    ss << SERVICE_PID << getpid();
+    ss << DEVICE_NAME << ":" << DEVICE_RFID_BOQUILLA << ",";
+    ss << SERVICE_PID << ":" << getpid();
     ss << "}";
 
     return std::string(ss.str());
