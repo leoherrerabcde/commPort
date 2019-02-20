@@ -41,12 +41,12 @@ void printMsg(std::string msg)
         {
             bConnected = true;
             sckComPort.sendData(firstMessage());
+            std::cout << "Socket connected." << std::endl;
         }
         sckComPort.sendData(msg);
     }
     else
     {
-        //msg += '\n';
         std::cout << SCCRealTime::getTimeStamp() << ',' << msg << std::endl;
     }
 }
@@ -202,6 +202,8 @@ int main(int argc, char* argv[])
             }*/
         }
         ++iNoRxCounter;
+        if (bConnected == true && !sckComPort.isConnected())
+            break;
     }
     while (commPort.isOpened());
 
