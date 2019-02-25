@@ -1,4 +1,5 @@
 #include "SCCWirelessRcvrProtocol.h"
+#include "../main_control/SCCDeviceNames.h"
 
 #include <sstream>
 #include <iomanip>
@@ -597,7 +598,7 @@ std::string SCCWirelessRcvrProtocol::printStatus(char addr)
 
     std::stringstream ss;
 
-    ss << "{" ;
+    ss << FRAME_START_MARK ;
     ss << VAR_BATTERY_ALARM << ASSIGN_CHAR << boolToString(isAlarm(addr));
     ss << SEPARATOR_CHAR << VAR_FAIL_STATUS << ASSIGN_CHAR << boolToString(isFail(addr));
     ss << SEPARATOR_CHAR << VAR_NOZZLE_ACTIVED << ASSIGN_CHAR << boolToString(isNozzleActived(addr));
@@ -620,7 +621,7 @@ std::string SCCWirelessRcvrProtocol::printStatus(char addr)
     {
         ss << boolToString(isTagDetected(addr));
     }
-    ss << "}";
+    ss << FRAME_STOP_MARK;
     return std::string(ss.str());
 }
 

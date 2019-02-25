@@ -25,10 +25,10 @@ std::string firstMessage()
 {
     std::stringstream ss;
 
-    ss << "{";
+    ss << FRAME_START_MARK;
     ss << DEVICE_NAME << ":" << DEVICE_RFID_BOQUILLA << ",";
     ss << SERVICE_PID << ":" << getpid();
-    ss << "}";
+    ss << FRAME_STOP_MARK;
 
     return std::string(ss.str());
 }
