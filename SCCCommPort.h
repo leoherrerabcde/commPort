@@ -10,10 +10,10 @@
 #include <iostream>
 #include <queue>
 #include <thread>
-
+#include <mutex>
 //#include "SerialComm.h"
 
-#define MAX_BUFFER_THRESHOLD    4000
+#define MAX_BUFFER_THRESHOLD    4096
 
 class SCCCommPort
 {
@@ -41,6 +41,8 @@ class SCCCommPort
         bool isOpened() {return m_bOpened;}
 
         std::string printCounter();
+
+        void sleepDuringTxRx(int byteSize);
 
     protected:
 
@@ -71,7 +73,9 @@ class SCCCommPort
 #endif
         int m_iUSBPort;
 
-        std::queue<char> m_chBufferIn;
+        //std::queue<char> m_chBufferIn;
+        char m_chBufferIn[MAX_BUFFER_THRESHOLD];
+        size_t m_iBufferInPtr;
         std::queue<char> m_chBufferOut;
 
         bool m_bSending;
@@ -84,6 +88,11 @@ class SCCCommPort
 
         int m_loopCounter;
         int m_iLoopRx;
+
+        int m_iRxTimeOut;
+        int m_iTxTimeOut;
+
+        std::mutex m_mutexBuffer;
 };
 
 #endif // SCCCOMMPORT_H

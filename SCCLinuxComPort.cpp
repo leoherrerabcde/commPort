@@ -34,6 +34,7 @@ bool SCCCommPort::openPort(const int iPort, const int baudRate)
         return true;
 
     m_iCommPort = iPort;
+    m_iBaudRate = baudRate;
     std::string strPort("/dev/ttyUSB");
     std::stringstream ss;
     ss << iPort;
@@ -188,10 +189,13 @@ std::string SCCCommPort::readMsg()
         n = read( m_iUSBPort, &buf, 1 );
         if (n >0)
         {
+            std::lock_guard<std::mutex> lockbuf(m_mutexBuffer);
             //response[spot] = buf;
-            m_chBufferIn.push(buf);
+            //m_chBufferIn.push(buf);
             //strMsg += buf;
             //spot += n;
+            if (m_iBufferInPtr < MAX_BUFFER_THRESHOLD)
+                m_chBufferIn[m_iBufferInPtr++] = buf;
             m_bRxEvent = true;
             m_bReceived = true;
             addRxBuffer(n);

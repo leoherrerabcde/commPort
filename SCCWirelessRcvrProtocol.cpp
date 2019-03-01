@@ -364,8 +364,8 @@ bool SCCWirelessRcvrProtocol::nextActionFromStatus(commandStruct& cmdSt, int add
 
     if (getStatus(addr) != STATUS_TAG_READ_SUCCEEDS && getStatus(addr) != STATUS_TAG_DATA_READY)
         clearTagDetected(addr);
-    else
-        setTagDetected(addr);
+    /*else
+        setTagDetected(addr);*/
 
     return true;
 }

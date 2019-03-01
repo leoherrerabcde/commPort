@@ -3,6 +3,9 @@
 #include <string>
 #include <sstream>
 #include <unordered_map>
+#include <chrono>
+#include <cmath>
+#include <cstring>
 
 using namespace std;
 
@@ -43,6 +46,11 @@ SCCCommPort::SCCCommPort()
 
     m_iRxByteCount = 0;
     m_iTxByteCount = 0;
+
+    m_iRxTimeOut    = 0;
+    m_iTxTimeOut    = 0;
+
+    m_iBufferInPtr  = 0;
 }
 
 SCCCommPort::~SCCCommPort()
@@ -67,13 +75,20 @@ bool SCCCommPort::getData(char* buffer, int& len)
     if (m_bOpened == false || m_bReceived == false)
         return false;
 
-    while (m_chBufferIn.size())
+    //while (m_chBufferIn.size())
     {
-        *buffer++ = m_chBufferIn.front();
-        m_chBufferIn.pop();
-        ++len;
+        std::lock_guard<std::mutex> lockbuf(m_mutexBuffer);
+        if (m_iBufferInPtr)
+        {
+            memcpy(buffer, m_chBufferIn, m_iBufferInPtr);
+            len = m_iBufferInPtr;
+            m_iBufferInPtr = 0;
+        }
+        //*buffer++ = m_chBufferIn.front();
+        //m_chBufferIn.pop();
+        //++len;
     }
-    *buffer = '\0';
+    //*buffer = '\0';
     m_bReceived = false;
 
     return true;
@@ -108,6 +123,17 @@ void SCCCommPort::addBuffer(int n, int& bufferCounter)
         flushBuffers();
 }
 
+void SCCCommPort::sleepDuringTxRx(int byteSize)
+{
+    if (byteSize <= 0)
+        return;
+    int iTimeOut = std::ceil(byteSize*10000.0/m_iBaudRate);
+    if (iTimeOut <= 0)
+        return;
+    std::this_thread::sleep_for(std::chrono::milliseconds(iTimeOut));
+}
+
+
 #ifdef WINDOW_OS
 bool SCCCommPort::openPort(const int iPort, const int baudRate)
 {
@@ -115,6 +141,7 @@ bool SCCCommPort::openPort(const int iPort, const int baudRate)
         return true;
 
     m_iCommPort = iPort;
+    m_iBaudRate = baudRate;
     std::string strPort("\\\\.\\COM");
     std::stringstream ss;
     ss << iPort;
@@ -378,8 +405,15 @@ std::string SCCCommPort::readMsg()
         {
             lpszBlock[dwLength] = '\0';
             strMsg += lpszBlock;
-            for (DWORD i = 0; i < dwLength ; ++i)
-                m_chBufferIn.push(lpszBlock[i]);
+            {
+                std::lock_guard<std::mutex> lockbuf(m_mutexBuffer);
+            //for (DWORD i = 0; i < dwLength ; ++i)
+            //    m_chBufferIn.push(lpszBlock[i]);
+                if (m_iBufferInPtr + lpszBlock >= MAX_BUFFER_THRESHOLD)
+                    lpszBlock = MAX_BUFFER_THRESHOLD - m_iBufferInPtr;
+                memcpy(m_chBufferIn+m_iBufferInPtr, lpszBlock, dwLength);
+                m_iBufferInPtr += lpszBlock;
+            }
             m_bReceived = true;
         }
 		CloseHandle(ovRead.hEvent );
