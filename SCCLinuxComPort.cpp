@@ -13,7 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define PRINT_DBG()           {std::cout << "Line:\t" << __LINE__ << "\t" << SCCRealTime::getTimeStamp() << std::endl;}
+//#define PRINT_DBG()           {std::cout << "Line:\t" << __LINE__ << "\t" << SCCRealTime::getTimeStamp() << std::endl;}
 
 static std::unordered_map<int,speed_t> stLinuxBaudRateMap =
 {
@@ -31,6 +31,11 @@ static std::unordered_map<int,speed_t> stLinuxBaudRateMap =
         /*{128000,B128000},
         {256000,B256000}*/
 };
+
+void SCCCommPort::getComPortList(int nport)
+{
+    getComPortList(m_comPortQueue, nport);
+}
 
 void SCCCommPort::getComPortList(std::queue<int>& list, int nport)
 {
@@ -247,7 +252,7 @@ void SCCCommPort::closePort()
     if (m_bOpened == true)
     {
         m_bOpened = false;
-        PRINT_DBG();
+        //PRINT_DBG();
         close(m_iUSBPort);
         killThread(m_threadRun);
         m_threadRun = NULL;
@@ -258,6 +263,7 @@ void SCCCommPort::closePort()
             delete m_threadRun;
             m_threadRun = NULL;
         }*/
+        std::cout << "Com Port " << m_iCommPort << " closed" << std::endl;
     }
 }
 

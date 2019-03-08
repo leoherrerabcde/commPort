@@ -14,7 +14,7 @@
 
 using namespace std;
 
-#define PRINT_DBG()           {std::cout << "Line:\t" << __LINE__ << "\t" << SCCRealTime::getTimeStamp() << std::endl;}
+//#define PRINT_DBG()           {std::cout << "Line:\t" << __LINE__ << "\t" << SCCRealTime::getTimeStamp() << std::endl;}
 
 static bool st_bSendMsgView = false;
 static bool st_bRcvMsgView  = true;
@@ -92,9 +92,9 @@ int main(int argc, char* argv[])
     SCCWirelessRcvrProtocol rcvrProtocol;
     SCCRealTime clock;
 
-    std::queue<int> comPortQueue;
-
-    commPort.getComPortList(comPortQueue, nPort);
+    //std::queue<int> comPortQueue;
+    commPort.setBaudRate(baudRate);
+    commPort.getComPortList(/*comPortQueue, */nPort);
 
     //commPort.openPort(nPort, baudRate);
 
@@ -135,26 +135,16 @@ int main(int argc, char* argv[])
         }
         if (chLen > 0)
         {
-            /*++iWaitForValidRxCounter;
-            if (iWaitForValidRxCounter >=5)
-            {
-                iWaitForValidRxCounter = 0;*/
-        //PRINT_DBG();
-                while(!comPortQueue.empty())
+            commPort.searchNextPort();
+                /*while(!comPortQueue.empty())
                 {
                     int nPort = comPortQueue.front();
-        PRINT_DBG();
                     commPort.closePort();
-        PRINT_DBG();
                     bool bOpened = commPort.openPort(nPort, baudRate);
-        //PRINT_DBG();
                     comPortQueue.pop();
                     if (bOpened)
                         break;
-        //PRINT_DBG();
-                }
-        PRINT_DBG();
-            //}
+                }*/
             if (st_bSendMsgView)
             {
                 cout << commPort.printCounter() << std::endl;
@@ -190,10 +180,11 @@ int main(int argc, char* argv[])
                 if (bIsValidResponse == true)
                 {
                     //iWaitForValidRxCounter = 0;
-                    while(!comPortQueue.empty())
+                    /*while(!comPortQueue.empty())
                     {
                         comPortQueue.pop();
-                    }
+                    }*/
+                    commPort.stopSearchPort();
                     if (st_bRcvMsgView)
                     {
                         //cout << ++nCount << " " << commPort.printCounter() << clock.getTimeStamp() << " Valid WGT Response" << std::endl;

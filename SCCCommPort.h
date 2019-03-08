@@ -29,6 +29,7 @@ class SCCCommPort
         std::string getData();
         bool getData(char* buffer, int& len);
         void closePort();
+        void setBaudRate(int baudRate) {m_iBaudRate = baudRate;}
 
         bool m_bOpened;
         std::string m_Buffer;
@@ -45,7 +46,10 @@ class SCCCommPort
         std::string printCounter();
 
         void sleepDuringTxRx(int byteSize);
-        static void getComPortList(std::queue<int>& list, int nport);
+        static void getComPortList(std::queue<int>& list, int nport = -1);
+        void getComPortList(int nport = -1);
+        void searchNextPort();
+        void stopSearchPort();
 
     protected:
 
@@ -77,6 +81,7 @@ class SCCCommPort
         HANDLE	m_hDataRx;
 #endif
         int m_iUSBPort;
+        //int m_iComPort;
 
         //std::queue<char> m_chBufferIn;
         char m_chBufferIn[MAX_BUFFER_THRESHOLD];
@@ -100,6 +105,7 @@ class SCCCommPort
         std::mutex m_mutexBuffer;
 
         std::list<std::thread*> m_threadList;
+        std::queue<int>         m_comPortQueue;
 };
 
 #endif // SCCCOMMPORT_H

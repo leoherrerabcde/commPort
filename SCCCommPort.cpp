@@ -10,7 +10,7 @@
 
 using namespace std;
 
-#define PRINT_DBG()           {std::cout << "Line:\t" << __LINE__ << "\t" << SCCRealTime::getTimeStamp() << std::endl;}
+//#define PRINT_DBG()           {std::cout << "Line:\t" << __LINE__ << "\t" << SCCRealTime::getTimeStamp() << std::endl;}
 
 #ifdef WINDOW_OS
 unordered_map<int,DWORD> stBaudRateMap =
@@ -143,7 +143,7 @@ void SCCCommPort::sleepDuringTxRx(int byteSize)
 
 void SCCCommPort::killThread(std::thread* pThread)
 {
-    PRINT_DBG();
+    //PRINT_DBG();
     m_threadList.push_back(pThread);
     /*std::thread* pKillThread ;
     if (pThread)
@@ -151,6 +151,25 @@ void SCCCommPort::killThread(std::thread* pThread)
         pThread->join();
         delete pThread;
     }*/
+}
+
+void SCCCommPort::searchNextPort()
+{
+    while(!m_comPortQueue.empty())
+    {
+        int nPort = m_comPortQueue.front();
+        closePort();
+        bool bOpened = openPort(nPort, m_iBaudRate);
+        m_comPortQueue.pop();
+        if (bOpened)
+            break;
+    }
+}
+
+void SCCCommPort::stopSearchPort()
+{
+    while (!m_comPortQueue.empty())
+        m_comPortQueue.pop();
 }
 
 #ifdef WINDOW_OS
