@@ -1,4 +1,5 @@
 #include "SCCCommPort.h"
+#include "../main_control/SCCFileManager.h"
 
 #ifdef LINUX_SO
 
@@ -28,6 +29,23 @@ static std::unordered_map<int,speed_t> stLinuxBaudRateMap =
         {256000,B256000}*/
 };
 
+void SCCCommPort::getComPortList(std::queue<int>& list, int nport)
+{
+    list.push(nport);
+
+    for (int i=0; ;++i)
+    {
+        if (i == nport)
+            continue;
+        std::string strPort("/dev/ttyUSB");
+        strPort += std::to_string(i);
+        if (SCCFileManager::isFileExist(strPort))
+            list.push(i);
+        else
+            break;
+    }
+}
+
 bool SCCCommPort::openPort(const int iPort, const int baudRate)
 {
     if (m_bOpened == true)
@@ -48,6 +66,22 @@ bool SCCCommPort::openPort(const int iPort, const int baudRate)
        return false;
     }
     m_bOpened = true;
+
+    /*fd_set set;
+    struct timeval timeout;
+    int rv;
+
+    FD_ZERO(&set);
+    FD_SET(m_iUSBPort, &set);
+
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+
+    rv = select(m_iUSBPort + 1, &set, NULL, NULL, &timeout);
+    if (rv > 0)
+        std::cout << "Read Time out set" << std::endl;
+    else
+        std::cout << "Problem happened setting read timeout" << std::endl;*/
 
     struct termios tty;
     struct termios tty_old;
@@ -210,12 +244,13 @@ void SCCCommPort::closePort()
     if (m_bOpened == true)
     {
         m_bOpened = false;
+        close(m_iUSBPort);
         if (m_threadRun != NULL)
         {
             m_threadRun->join();
             delete m_threadRun;
+            m_threadRun = NULL;
         }
-        close(m_iUSBPort);
     }
 }
 

@@ -14,6 +14,8 @@
 
 using namespace std;
 
+#define PRINT_DBG()           {std::cout << "Line:\t" << __LINE__ << "\t" << SCCRealTime::getTimeStamp() << std::endl;}
+
 static bool st_bSendMsgView = false;
 static bool st_bRcvMsgView  = true;
 
@@ -90,21 +92,26 @@ int main(int argc, char* argv[])
     SCCWirelessRcvrProtocol rcvrProtocol;
     SCCRealTime clock;
 
-    commPort.openPort(nPort, baudRate);
+    std::queue<int> comPortQueue;
+
+    commPort.getComPortList(comPortQueue, nPort);
+
+    //commPort.openPort(nPort, baudRate);
 
     char bufferOut[255];
     char bufferIn[250];
+    char chLen;
     char len;
     int iAddr = 1;
     std::string msg;
 
-    msg = rcvrProtocol.getStrCmdStatusCheck(iAddr, bufferOut, len);
+    msg = rcvrProtocol.getStrCmdStatusCheck(iAddr, bufferOut, chLen);
 
-    msg = rcvrProtocol.convChar2Hex(bufferOut, len);
+    msg = rcvrProtocol.convChar2Hex(bufferOut, chLen);
 
     if (st_bSendMsgView)
         std::cout << "Message: " << msg << " sent." << std::endl;
-    commPort.sendData(bufferOut, len);
+    //commPort.sendData(bufferOut, len);
 
     if (st_bSendMsgView)
         cout << "Waiting for response" << std::endl;
@@ -112,13 +119,15 @@ int main(int argc, char* argv[])
 
     int iTimeOut;
     bool bNextAddr;
-    char chLen = 0;
+    //char chLen = len;
     //char chLenLast = 0;
     int iNoRxCounter = 0;
+    //int iWaitForValidRxCounter = 5;
     do
     {
         bNextAddr = true;
         iTimeOut = 1000;
+        PRINT_DBG();
         if (iNoRxCounter >= 5)
         {
             iNoRxCounter = 0;
@@ -126,6 +135,26 @@ int main(int argc, char* argv[])
         }
         if (chLen > 0)
         {
+            /*++iWaitForValidRxCounter;
+            if (iWaitForValidRxCounter >=5)
+            {
+                iWaitForValidRxCounter = 0;*/
+        PRINT_DBG();
+                while(!comPortQueue.empty())
+                {
+                    int nPort = comPortQueue.front();
+        PRINT_DBG();
+                    commPort.closePort();
+        PRINT_DBG();
+                    bool bOpened = commPort.openPort(nPort, baudRate);
+        PRINT_DBG();
+                    comPortQueue.pop();
+                    if (bOpened)
+                        break;
+        PRINT_DBG();
+                }
+        PRINT_DBG();
+            //}
             if (st_bSendMsgView)
             {
                 cout << commPort.printCounter() << std::endl;
@@ -160,6 +189,11 @@ int main(int argc, char* argv[])
                 bool bNextAction = false;
                 if (bIsValidResponse == true)
                 {
+                    //iWaitForValidRxCounter = 0;
+                    while(!comPortQueue.empty())
+                    {
+                        comPortQueue.pop();
+                    }
                     if (st_bRcvMsgView)
                     {
                         //cout << ++nCount << " " << commPort.printCounter() << clock.getTimeStamp() << " Valid WGT Response" << std::endl;

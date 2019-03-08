@@ -43,6 +43,7 @@ class SCCCommPort
         std::string printCounter();
 
         void sleepDuringTxRx(int byteSize);
+        static void getComPortList(std::queue<int>& list, int nport);
 
     protected:
 

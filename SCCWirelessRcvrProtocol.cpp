@@ -599,7 +599,8 @@ std::string SCCWirelessRcvrProtocol::printStatus(char addr)
     std::stringstream ss;
 
     ss << FRAME_START_MARK ;
-    ss << VAR_BATTERY_ALARM << ASSIGN_CHAR << boolToString(isAlarm(addr));
+    ss << MSG_HEADER_TYPE << ASSIGN_CHAR << DEVICE_RFID_BOQUILLA;
+    ss << SEPARATOR_CHAR << VAR_BATTERY_ALARM << ASSIGN_CHAR << boolToString(isAlarm(addr));
     ss << SEPARATOR_CHAR << VAR_FAIL_STATUS << ASSIGN_CHAR << boolToString(isFail(addr));
     ss << SEPARATOR_CHAR << VAR_NOZZLE_ACTIVED << ASSIGN_CHAR << boolToString(isNozzleActived(addr));
     ss << SEPARATOR_CHAR << VAR_TAG_DETECTED << ASSIGN_CHAR ;
