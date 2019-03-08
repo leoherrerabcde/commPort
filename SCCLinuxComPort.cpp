@@ -2,6 +2,9 @@
 #include "../main_control/SCCFileManager.h"
 #include "SCCRealTime.h"
 
+//#include <termios.h>
+#include <sys/ioctl.h>
+
 #ifdef LINUX_SO
 
 #include <termios.h>
@@ -73,6 +76,7 @@ bool SCCCommPort::openPort(const int iPort, const int baudRate)
        std::cout << "Error " << errno << " from tcgetattr: " << strerror(errno) << std::endl;
        return false;
     }
+    ioctl(m_iUSBPort, TIOCEXCL);
     m_bOpened = true;
 
     /*fd_set set;
@@ -98,6 +102,8 @@ bool SCCCommPort::openPort(const int iPort, const int baudRate)
     /* Error Handling */
     if ( tcgetattr ( m_iUSBPort, &tty ) != 0 ) {
        std::cout << "Error " << errno << " from tcgetattr: " << strerror(errno) << std::endl;
+       closePort();
+       return false;
     }
 
     /* Save old tty parameters */
@@ -125,6 +131,8 @@ bool SCCCommPort::openPort(const int iPort, const int baudRate)
     tcflush( m_iUSBPort, TCIFLUSH );
     if ( tcsetattr ( m_iUSBPort, TCSANOW, &tty ) != 0) {
        std::cout << "Error " << errno << " from tcsetattr" << std::endl;
+       closePort();
+       return false;
     }
     std::cout << "Comm Port " << iPort << " opened." << std::endl;
 
@@ -254,6 +262,7 @@ void SCCCommPort::closePort()
         m_bOpened = false;
         //PRINT_DBG();
         close(m_iUSBPort);
+        ioctl(m_iUSBPort, TIOCNXCL);
         killThread(m_threadRun);
         m_threadRun = NULL;
         /*if (m_threadRun != NULL)
