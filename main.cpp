@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
     {
         bNextAddr = true;
         iTimeOut = 1000;
-        PRINT_DBG();
+        //PRINT_DBG();
         if (iNoRxCounter >= 5)
         {
             iNoRxCounter = 0;
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
             if (iWaitForValidRxCounter >=5)
             {
                 iWaitForValidRxCounter = 0;*/
-        PRINT_DBG();
+        //PRINT_DBG();
                 while(!comPortQueue.empty())
                 {
                     int nPort = comPortQueue.front();
@@ -147,11 +147,11 @@ int main(int argc, char* argv[])
                     commPort.closePort();
         PRINT_DBG();
                     bool bOpened = commPort.openPort(nPort, baudRate);
-        PRINT_DBG();
+        //PRINT_DBG();
                     comPortQueue.pop();
                     if (bOpened)
                         break;
-        PRINT_DBG();
+        //PRINT_DBG();
                 }
         PRINT_DBG();
             //}

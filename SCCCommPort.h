@@ -11,6 +11,8 @@
 #include <queue>
 #include <thread>
 #include <mutex>
+#include <list>
+
 //#include "SerialComm.h"
 
 #define MAX_BUFFER_THRESHOLD    4096
@@ -62,6 +64,8 @@ class SCCCommPort
         void addBuffer(int n, int& bufferCounter);
         void flushBuffers();
 
+        void killThread(std::thread* pThread);
+
     private:
 
 #ifdef WINDOW_OS
@@ -94,6 +98,8 @@ class SCCCommPort
         int m_iTxTimeOut;
 
         std::mutex m_mutexBuffer;
+
+        std::list<std::thread*> m_threadList;
 };
 
 #endif // SCCCOMMPORT_H

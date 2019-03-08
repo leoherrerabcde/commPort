@@ -1,5 +1,6 @@
 #include "SCCCommPort.h"
 #include "../main_control/SCCFileManager.h"
+#include "SCCRealTime.h"
 
 #ifdef LINUX_SO
 
@@ -11,6 +12,8 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+
+#define PRINT_DBG()           {std::cout << "Line:\t" << __LINE__ << "\t" << SCCRealTime::getTimeStamp() << std::endl;}
 
 static std::unordered_map<int,speed_t> stLinuxBaudRateMap =
 {
@@ -244,13 +247,17 @@ void SCCCommPort::closePort()
     if (m_bOpened == true)
     {
         m_bOpened = false;
+        PRINT_DBG();
         close(m_iUSBPort);
-        if (m_threadRun != NULL)
+        killThread(m_threadRun);
+        m_threadRun = NULL;
+        /*if (m_threadRun != NULL)
         {
             m_threadRun->join();
+            PRINT_DBG();
             delete m_threadRun;
             m_threadRun = NULL;
-        }
+        }*/
     }
 }
 

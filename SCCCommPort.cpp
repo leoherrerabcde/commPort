@@ -6,8 +6,11 @@
 #include <chrono>
 #include <cmath>
 #include <cstring>
+#include "SCCRealTime.h"
 
 using namespace std;
+
+#define PRINT_DBG()           {std::cout << "Line:\t" << __LINE__ << "\t" << SCCRealTime::getTimeStamp() << std::endl;}
 
 #ifdef WINDOW_OS
 unordered_map<int,DWORD> stBaudRateMap =
@@ -56,6 +59,11 @@ SCCCommPort::SCCCommPort()
 SCCCommPort::~SCCCommPort()
 {
     //dtor
+    closePort();
+    for (auto pThread : m_threadList)
+    {
+        delete pThread;
+    }
 }
 
 bool SCCCommPort::sendData(char* msg, size_t len)
@@ -133,6 +141,17 @@ void SCCCommPort::sleepDuringTxRx(int byteSize)
     std::this_thread::sleep_for(std::chrono::milliseconds(iTimeOut));
 }
 
+void SCCCommPort::killThread(std::thread* pThread)
+{
+    PRINT_DBG();
+    m_threadList.push_back(pThread);
+    /*std::thread* pKillThread ;
+    if (pThread)
+    {
+        pThread->join();
+        delete pThread;
+    }*/
+}
 
 #ifdef WINDOW_OS
 bool SCCCommPort::openPort(const int iPort, const int baudRate)
