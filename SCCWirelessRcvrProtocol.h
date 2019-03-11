@@ -49,6 +49,9 @@
 #define VAR_NOZZLE_ACTIVED          "Nozzle_Actived"
 #define VAR_TAG_DETECTED            "Tag_Detected"
 
+
+#define MY_DEVICE_NAME              DEVICE_RFID_BOQUILLA
+
 enum Host2WGTCommand
 {
     Invalid = 0,

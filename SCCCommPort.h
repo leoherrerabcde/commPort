@@ -50,6 +50,7 @@ class SCCCommPort
         void getComPortList(int nport = -1);
         void searchNextPort();
         void stopSearchPort();
+        void setDeviceName(const std::string& strDeviceName) {m_strMyDeviceName=strDeviceName;}
 
     protected:
 
@@ -106,6 +107,8 @@ class SCCCommPort
 
         std::list<std::thread*> m_threadList;
         std::queue<int>         m_comPortQueue;
+
+        std::string     m_strMyDeviceName;
 };
 
 #endif // SCCCOMMPORT_H

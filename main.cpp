@@ -19,6 +19,8 @@ using namespace std;
 static bool st_bSendMsgView = false;
 static bool st_bRcvMsgView  = true;
 
+std::string globalMyDeviceName(MY_DEVICE_NAME);
+
 CSocket sckComPort;
 
 bool bConnected     = false;
@@ -35,7 +37,7 @@ std::string firstMessage()
     return std::string(ss.str());
 }
 
-void printMsg(std::string msg)
+void printMsg(const std::string& msg = "")
 {
     if (sckComPort.isConnected())
     {
@@ -43,9 +45,10 @@ void printMsg(std::string msg)
         {
             bConnected = true;
             sckComPort.sendData(firstMessage());
-            std::cout << "Socket connected." << std::endl;
+            std::cout << MY_DEVICE_NAME << ": Socket connected." << std::endl;
         }
-        sckComPort.sendData(msg);
+        if (msg != "")
+            sckComPort.sendData(msg);
     }
     else
     {
@@ -83,12 +86,14 @@ int main(int argc, char* argv[])
 
     if (remotePort)
     {
+        sckComPort.setSocketName(MY_DEVICE_NAME);
         sckComPort.connect("127.0.0.1", remotePort);
         //bConnecting = true;
         bConnected  = false;
         //iSckCounter = 0;
     }
     SCCCommPort commPort;
+    commPort.setDeviceName(MY_DEVICE_NAME);
     SCCWirelessRcvrProtocol rcvrProtocol;
     SCCRealTime clock;
 
@@ -125,8 +130,10 @@ int main(int argc, char* argv[])
     //int iWaitForValidRxCounter = 5;
     do
     {
+        if (!bConnected && sckComPort.isConnected())
+            printMsg();
         bNextAddr = true;
-        iTimeOut = 1000;
+        iTimeOut = 500;
         //PRINT_DBG();
         if (iNoRxCounter >= 5)
         {
@@ -145,13 +152,14 @@ int main(int argc, char* argv[])
                     if (bOpened)
                         break;
                 }*/
-            if (st_bSendMsgView)
+            /*if (st_bSendMsgView)
             {
                 cout << commPort.printCounter() << std::endl;
                 msg = rcvrProtocol.convChar2Hex(bufferOut, chLen);
                 cout << SCCRealTime::getTimeStamp() << ',' << "Sending Message: " << msg << std::endl;
-            }
+            }*/
             commPort.sendData(bufferOut, chLen);
+            commPort.sleepDuringTxRx(3*chLen);
             //chLenLast = chLen;
             chLen = 0;
             iTimeOut = 20;
@@ -169,7 +177,7 @@ int main(int argc, char* argv[])
                 /*if (st_bRcvMsgView)
                 {
                     msg = rcvrProtocol.convChar2Hex(bufferIn, len);
-                    cout << ++nCount << " Buffer In(Hex): [" << msg << "]. Buffer In(char): [" << bufferIn << "]" << std::endl;
+                    std::cout << " Buffer In(Hex): [" << msg << "]" << std::endl;
                 }*/
                 std::string strCmd;
                 char resp[256];
@@ -193,12 +201,15 @@ int main(int argc, char* argv[])
                     }
                     bNextAction = rcvrProtocol.nextAction(iAddr, bufferOut, chLen, iTimeOut);
                     if (bNextAction == true)
+                    {
                         if (st_bRcvMsgView)
                         {
-                            std::stringstream ss;
+                            //std::stringstream ss;
                             //ss << ++nCount << " " << commPort.printCounter() << rcvrProtocol.printStatus(iAddr) << std::endl;
                             printMsg(rcvrProtocol.printStatus(iAddr));
                         }
+                        //iTimeOut = 0;
+                    }
                 }
             }
         }

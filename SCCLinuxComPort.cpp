@@ -69,31 +69,37 @@ bool SCCCommPort::openPort(const int iPort, const int baudRate)
     ss << iPort;
     strPort += ss.str();
 
+    std::cout << m_strMyDeviceName << ": Opening " << strPort << " ..." << std::endl;
+
     m_iUSBPort = open( strPort.c_str(), O_RDWR| O_NOCTTY );
 
     if (m_iUSBPort < 0)
     {
-       std::cout << "Error " << errno << " from tcgetattr: " << strerror(errno) << std::endl;
+       std::cout << m_strMyDeviceName << ": Error " << errno << " from tcgetattr: " << strerror(errno) << std::endl;
        return false;
     }
     ioctl(m_iUSBPort, TIOCEXCL);
     m_bOpened = true;
 
-    /*fd_set set;
+    fd_set read_fds, write_fds, except_fds;
+    FD_ZERO(&read_fds);
+    FD_ZERO(&write_fds);
+    FD_ZERO(&except_fds);
+    FD_SET(m_iUSBPort, &read_fds);
     struct timeval timeout;
     int rv;
 
-    FD_ZERO(&set);
-    FD_SET(m_iUSBPort, &set);
+    /*FD_ZERO(&set);
+    FD_SET(m_iUSBPort, &set);*/
 
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
 
-    rv = select(m_iUSBPort + 1, &set, NULL, NULL, &timeout);
+    rv = select(m_iUSBPort + 1, &read_fds, &write_fds, &except_fds, &timeout);
     if (rv > 0)
         std::cout << "Read Time out set" << std::endl;
     else
-        std::cout << "Problem happened setting read timeout" << std::endl;*/
+        std::cout << "Problem happened setting read timeout" << std::endl;
 
     struct termios tty;
     struct termios tty_old;
