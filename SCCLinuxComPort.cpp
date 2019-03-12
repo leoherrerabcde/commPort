@@ -4,6 +4,8 @@
 
 //#include <termios.h>
 #include <sys/ioctl.h>
+#include <string>
+
 
 #ifdef LINUX_SO
 
@@ -35,9 +37,43 @@ static std::unordered_map<int,speed_t> stLinuxBaudRateMap =
         {256000,B256000}*/
 };
 
-void SCCCommPort::getComPortList(int nport)
+void SCCCommPort::getComPortList(std::string nport)
 {
-    getComPortList(m_comPortQueue, nport);
+	size_t pos_ini = 0, pos;
+
+	while (pos_ini != std::string::npos && pos_ini < nport.size())
+	{
+		pos = nport.find(',', pos_ini);
+		int i;
+		if (pos != std::string::npos)
+		{
+            std::string com = nport.substr(pos_ini, pos - pos_ini);
+            i = std::stoi(com.c_str());
+			//m_comPortQueue.push(i);
+			++pos;
+		}
+		else
+		{
+            std::string com = nport.substr(pos_ini);
+            i = std::stoi(com.c_str());
+			//m_comPortQueue.push(i);
+			//list.push_back(nport.substr(pos_ini));
+        }
+        std::string strPort("/dev/ttyUSB");
+        strPort += std::to_string(i);
+        if (SCCFileManager::isFileExist(strPort))
+            m_comPortQueue.push(i);
+		pos_ini = pos;
+	}
+
+    //getComPortList(m_comPortQueue, nport);
+}
+
+void SCCCommPort::stopSearchPort()
+{
+    while (!m_comPortQueue.empty())
+        m_comPortQueue.pop();
+    ioctl(m_iUSBPort, TIOCEXCL);
 }
 
 void SCCCommPort::getComPortList(std::queue<int>& list, int nport)
@@ -78,10 +114,10 @@ bool SCCCommPort::openPort(const int iPort, const int baudRate)
        std::cout << m_strMyDeviceName << ": Error " << errno << " from tcgetattr: " << strerror(errno) << std::endl;
        return false;
     }
-    ioctl(m_iUSBPort, TIOCEXCL);
+    //ioctl(m_iUSBPort, TIOCEXCL);
     m_bOpened = true;
 
-    fd_set read_fds, write_fds, except_fds;
+    /*fd_set read_fds, write_fds, except_fds;
     FD_ZERO(&read_fds);
     FD_ZERO(&write_fds);
     FD_ZERO(&except_fds);
@@ -89,17 +125,14 @@ bool SCCCommPort::openPort(const int iPort, const int baudRate)
     struct timeval timeout;
     int rv;
 
-    /*FD_ZERO(&set);
-    FD_SET(m_iUSBPort, &set);*/
-
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
 
     rv = select(m_iUSBPort + 1, &read_fds, &write_fds, &except_fds, &timeout);
     if (rv > 0)
-        std::cout << "Read Time out set" << std::endl;
+        std::cout << m_strMyDeviceName << ": Read Time out set" << std::endl;
     else
-        std::cout << "Problem happened setting read timeout" << std::endl;
+        std::cout << m_strMyDeviceName << ": Problem happened setting read timeout" << std::endl;*/
 
     struct termios tty;
     struct termios tty_old;
@@ -140,7 +173,7 @@ bool SCCCommPort::openPort(const int iPort, const int baudRate)
        closePort();
        return false;
     }
-    std::cout << "Comm Port " << iPort << " opened." << std::endl;
+    std::cout << m_strMyDeviceName << ": Comm Port " << iPort << " opened." << std::endl;
 
     //SetCommMask (m_hPort, EV_RXCHAR | EV_ERR); //receive character event
 
@@ -268,7 +301,7 @@ void SCCCommPort::closePort()
         m_bOpened = false;
         //PRINT_DBG();
         close(m_iUSBPort);
-        ioctl(m_iUSBPort, TIOCNXCL);
+        //ioctl(m_iUSBPort, TIOCNXCL);
         killThread(m_threadRun);
         m_threadRun = NULL;
         /*if (m_threadRun != NULL)
@@ -278,7 +311,7 @@ void SCCCommPort::closePort()
             delete m_threadRun;
             m_threadRun = NULL;
         }*/
-        std::cout << "Com Port " << m_iCommPort << " closed" << std::endl;
+        std::cout << m_strMyDeviceName << ": Com Port " << m_iCommPort << " closed" << std::endl;
     }
 }
 

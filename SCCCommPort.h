@@ -47,10 +47,14 @@ class SCCCommPort
 
         void sleepDuringTxRx(int byteSize);
         static void getComPortList(std::queue<int>& list, int nport = -1);
-        void getComPortList(int nport = -1);
-        void searchNextPort();
+        void getComPortList(std::string nport);
+        bool searchNextPort();
         void stopSearchPort();
         void setDeviceName(const std::string& strDeviceName) {m_strMyDeviceName=strDeviceName;}
+        int getComPort() {return m_iCommPort;}
+        void setDeviceConnected() {m_bDeviceConnected=true;}
+        bool isDeviceConnected() {return m_bDeviceConnected;}
+        void setArgs(int argc, char** argv) {m_iArgc=argc; m_pArgv=argv;}
 
     protected:
 
@@ -109,6 +113,11 @@ class SCCCommPort
         std::queue<int>         m_comPortQueue;
 
         std::string     m_strMyDeviceName;
+
+        bool m_bDeviceConnected;
+
+        int     m_iArgc;
+        char**  m_pArgv;
 };
 
 #endif // SCCCOMMPORT_H

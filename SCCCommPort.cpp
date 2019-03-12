@@ -7,6 +7,8 @@
 #include <cmath>
 #include <cstring>
 #include "SCCRealTime.h"
+#include "../main_control/device.h"
+
 
 using namespace std;
 
@@ -62,6 +64,7 @@ SCCCommPort::~SCCCommPort()
     closePort();
     for (auto pThread : m_threadList)
     {
+        //pThread->join();
         delete pThread;
     }
 }
@@ -144,6 +147,7 @@ void SCCCommPort::sleepDuringTxRx(int byteSize)
 void SCCCommPort::killThread(std::thread* pThread)
 {
     //PRINT_DBG();
+    //delete pThread;
     m_threadList.push_back(pThread);
     /*std::thread* pKillThread ;
     if (pThread)
@@ -153,26 +157,55 @@ void SCCCommPort::killThread(std::thread* pThread)
     }*/
 }
 
-void SCCCommPort::searchNextPort()
+bool SCCCommPort::searchNextPort()
 {
-    while(!m_comPortQueue.empty())
+    if (!isOpened())
     {
-        int nPort = m_comPortQueue.front();
-        closePort();
-        bool bOpened = openPort(nPort, m_iBaudRate);
-        m_comPortQueue.pop();
-        if (bOpened)
-            break;
+        while(!m_comPortQueue.empty())
+        {
+            int nPort = m_comPortQueue.front();
+            closePort();
+            bool bOpened = openPort(nPort, m_iBaudRate);
+            m_comPortQueue.pop();
+            if (bOpened)
+                return true;
+        }
     }
+    else
+    {
+        /* Launching another instace */
+        //std::string ss;
+        /*ss << argv[0];
+        ss << " ";*/
+        if (m_comPortQueue.empty())
+            return false;
+        std::string strArgs;
+        while (!m_comPortQueue.empty())
+        {
+            int nPort = m_comPortQueue.front();
+            m_comPortQueue.pop();
+            if (strArgs == "")
+                strArgs = std::to_string(nPort);
+            else
+                strArgs += std::string(",") + std::to_string(nPort);
+        }
+        for (int i = 2; i < m_iArgc; ++i)
+            strArgs += std::string(" ") + m_pArgv[i];
+        //str += " &";
+        Device::launchService(m_pArgv[0], strArgs);
+     }
+    return false;
 }
+
+#ifdef WINDOW_OS
 
 void SCCCommPort::stopSearchPort()
 {
     while (!m_comPortQueue.empty())
         m_comPortQueue.pop();
+    ioctl(m_iUSBPort, TIOCEXCL);
 }
 
-#ifdef WINDOW_OS
 bool SCCCommPort::openPort(const int iPort, const int baudRate)
 {
     if (m_bOpened == true)

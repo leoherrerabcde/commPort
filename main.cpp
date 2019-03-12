@@ -11,6 +11,13 @@
 #include "SCCArgumentParser.h"
 #include "../main_control/CSocket.h"
 #include "../main_control/SCCDeviceNames.h"
+#include "../main_control/SCCDeviceParams.h"
+#include "../main_control/SCCLog.h"
+
+
+bool    gl_bVerbose(true);
+SCCLog  globalLog(std::cout);
+
 
 using namespace std;
 
@@ -21,6 +28,7 @@ static bool st_bRcvMsgView  = true;
 
 std::string globalMyDeviceName(MY_DEVICE_NAME);
 
+SCCCommPort commPort;
 CSocket sckComPort;
 
 bool bConnected     = false;
@@ -31,7 +39,8 @@ std::string firstMessage()
 
     ss << FRAME_START_MARK;
     ss << DEVICE_NAME << ":" << DEVICE_RFID_BOQUILLA << ",";
-    ss << SERVICE_PID << ":" << getpid();
+    ss << SERVICE_PID << ":" << getpid() << ",";
+    ss << PARAM_COM_PORT << ":" << commPort.getComPort();
     ss << FRAME_STOP_MARK;
 
     return std::string(ss.str());
@@ -59,7 +68,7 @@ void printMsg(const std::string& msg = "")
 int main(int argc, char* argv[])
 {
     //int nCount          = 0;
-    int nPort           = 7;
+    std::string         nPort;
     int baudRate        = 9600;
     float fTimeFactor   = 1.0;
     int remotePort      = 0;
@@ -69,7 +78,7 @@ int main(int argc, char* argv[])
 
     if (argc > 2)
     {
-        nPort = std::stoi(argv[1]);
+        nPort = argv[1];
         baudRate = std::stoi(argv[2]);
         if (argc > 3)
             remotePort = std::stoi(argv[3]);
@@ -92,8 +101,9 @@ int main(int argc, char* argv[])
         bConnected  = false;
         //iSckCounter = 0;
     }
-    SCCCommPort commPort;
+
     commPort.setDeviceName(MY_DEVICE_NAME);
+    commPort.setArgs(argc, &argv[0]);
     SCCWirelessRcvrProtocol rcvrProtocol;
     SCCRealTime clock;
 
@@ -127,11 +137,12 @@ int main(int argc, char* argv[])
     //char chLen = len;
     //char chLenLast = 0;
     int iNoRxCounter = 0;
+    //int iKillSelf = 0;
     //int iWaitForValidRxCounter = 5;
     do
     {
-        if (!bConnected && sckComPort.isConnected())
-            printMsg();
+        /*if (!bConnected && sckComPort.isConnected())
+            printMsg();*/
         bNextAddr = true;
         iTimeOut = 500;
         //PRINT_DBG();
@@ -142,7 +153,8 @@ int main(int argc, char* argv[])
         }
         if (chLen > 0)
         {
-            commPort.searchNextPort();
+            if (!commPort.isDeviceConnected() && !commPort.searchNextPort())
+                break;
                 /*while(!comPortQueue.empty())
                 {
                     int nPort = comPortQueue.front();
@@ -192,6 +204,7 @@ int main(int argc, char* argv[])
                     {
                         comPortQueue.pop();
                     }*/
+                    commPort.setDeviceConnected();
                     commPort.stopSearchPort();
                     if (st_bRcvMsgView)
                     {
@@ -242,9 +255,9 @@ int main(int argc, char* argv[])
             break;
     }
     while (commPort.isOpened());
-
+    std::cout << MY_DEVICE_NAME << ": Exiting the application normally" << std::endl;
     sckComPort.disconnect();
     commPort.closePort();
-
+    exit(0);
     return 0;
 }
