@@ -155,6 +155,7 @@ bool SCCCommPort::openPort(const int iPort, const int baudRate)
     /* Setting other Port Stuff */
     tty.c_cflag     &=  ~PARENB;            // Make 8n1
     tty.c_cflag     &=  ~CSTOPB;
+    //tty.c_cflag     |=  CSTOPB;
     tty.c_cflag     &=  ~CSIZE;
     tty.c_cflag     |=  CS8;
 
