@@ -24,7 +24,7 @@ std::string SCCRealTime::getTimeStamp(bool bIncludeDate)
     {
         ss << std::setfill('0') << std::setw(4) << (now->tm_year+1900);
         ss << '/';
-        ss << std::setfill('0') << std::setw(2) << now->tm_mon;
+        ss << std::setfill('0') << std::setw(2) << (now->tm_mon + 1);
         ss << '/';
         ss << std::setfill('0') << std::setw(2) << now->tm_mday;
         ss << " ";
