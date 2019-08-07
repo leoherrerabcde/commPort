@@ -263,7 +263,7 @@ bool SCCCommPort::writeMsg(char* msg, size_t len)
 std::string SCCCommPort::readMsg()
 {
     if (m_bOpened == false)
-        return '\0';
+        return "";
 
     int n = 0;
         //spot = 0;
